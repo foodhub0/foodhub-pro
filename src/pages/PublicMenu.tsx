@@ -37,6 +37,7 @@ interface Restaurant {
   address: string | null;
   delivery_time_estimate: number | null;
   delivery_fee: number | null;
+  is_open: boolean;
 }
 
 const PublicMenu = () => {
@@ -155,6 +156,13 @@ const PublicMenu = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Closed Banner */}
+      {!restaurant.is_open && (
+        <div className="bg-amber-500 text-white py-3 px-4 text-center font-medium">
+          ⚠️ Este restaurante está temporariamente fechado
+        </div>
+      )}
+
       {/* Header Fixo */}
       <header className="sticky top-0 z-50 bg-white shadow-sm" role="banner">
         <div className="container mx-auto px-4 py-3">
