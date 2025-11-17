@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import Layout from "@/components/Layout";
+import ImageUpload from "@/components/ImageUpload";
 
 const Restaurant = () => {
   const { toast } = useToast();
@@ -194,25 +195,19 @@ const Restaurant = () => {
               <CardTitle>Imagens</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="logo_url">Logo (URL)</Label>
-                <Input
-                  id="logo_url"
-                  value={formData.logo_url}
-                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
+              <ImageUpload
+                value={formData.logo_url}
+                onChange={(url) => setFormData({ ...formData, logo_url: url || "" })}
+                label="Logo do Restaurante"
+                folder="restaurante/logo"
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="cover_url">Imagem de Capa (URL)</Label>
-                <Input
-                  id="cover_url"
-                  value={formData.cover_url}
-                  onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
+              <ImageUpload
+                value={formData.cover_url}
+                onChange={(url) => setFormData({ ...formData, cover_url: url || "" })}
+                label="Imagem de Capa"
+                folder="restaurante/cover"
+              />
             </CardContent>
           </Card>
 
