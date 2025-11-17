@@ -3,10 +3,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Search, Star, ArrowLeft, Clock, MapPin, Info } from "lucide-react";
+import { Search, Star, ArrowLeft, Clock, MapPin, Info, Share2, Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Product {
   id: string;
@@ -37,12 +45,14 @@ interface Restaurant {
 
 const MenuPreview = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -96,6 +106,39 @@ const MenuPreview = () => {
     }).format(value);
   };
 
+  const getPublicMenuUrl = () => {
+    if (!restaurant) return "";
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/m/${restaurant.slug}`;
+  };
+
+  const handleCopyLink = async () => {
+    const url = getPublicMenuUrl();
+    await navigator.clipboard.writeText(url);
+    toast({
+      title: "Link copiado!",
+      description: "O link do cardápio foi copiado para a área de transferência",
+    });
+  };
+
+  const handleShare = async () => {
+    const url = getPublicMenuUrl();
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: restaurant?.name || "Cardápio",
+          text: `Confira o cardápio de ${restaurant?.name}!`,
+          url: url,
+        });
+      } catch (error) {
+        // User cancelled share
+      }
+    } else {
+      await handleCopyLink();
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -122,6 +165,57 @@ const MenuPreview = () => {
               <h1 className="font-bold text-lg leading-tight">{restaurant?.name}</h1>
               <p className="text-xs text-muted-foreground">Preview do Cardápio</p>
             </div>
+            <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Share2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Compartilhar</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Compartilhar Cardápio</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Link público do seu cardápio:
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        value={getPublicMenuUrl()}
+                        readOnly
+                        className="font-mono text-sm"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleCopyLink}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleShare}
+                      className="flex-1"
+                    >
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Compartilhar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open(getPublicMenuUrl(), "_blank")}
+                      className="flex-1"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Abrir
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>

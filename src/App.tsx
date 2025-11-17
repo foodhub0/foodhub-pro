@@ -12,6 +12,10 @@ import Restaurant from "./pages/Restaurant";
 import Categories from "./pages/Categories";
 import Products from "./pages/Products";
 import MenuPreview from "./pages/MenuPreview";
+import Tables from "./pages/Tables";
+import Orders from "./pages/Orders";
+import Couriers from "./pages/Couriers";
+import PublicMenu from "./pages/PublicMenu";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +34,10 @@ const App = () => (
           <Route path="/categories" element={<Categories />} />
           <Route path="/products" element={<Products />} />
           <Route path="/menu-preview" element={<MenuPreview />} />
+          <Route path="/tables" element={<Tables />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/couriers" element={<Couriers />} />
+          <Route path="/m/:slug" element={<PublicMenu />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
