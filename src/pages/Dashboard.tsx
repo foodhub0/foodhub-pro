@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ShoppingBag, Clock, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import Layout from "@/components/Layout";
 
 interface DashboardStats {
   totalSales: number;
@@ -144,7 +145,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <Layout>
       <div className="container mx-auto p-6 space-y-6">
         <div>
           <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
@@ -183,7 +184,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </Layout>
   );
 };
 
