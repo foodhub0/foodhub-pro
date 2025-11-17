@@ -19,6 +19,7 @@ import Couriers from "./pages/Couriers";
 import PublicMenu from "./pages/PublicMenu";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import DiagnosticMenu from "./pages/DiagnosticMenu";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/m/:slug" element={<PublicMenu />} />
             <Route path="/m/:slug/checkout" element={<Checkout />} />
             <Route path="/m/:slug/order/:orderId" element={<OrderConfirmation />} />
+            <Route path="/diagnostic/:slug" element={<DiagnosticMenu />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
