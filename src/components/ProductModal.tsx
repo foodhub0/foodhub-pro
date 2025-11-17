@@ -151,148 +151,160 @@ export const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) =>
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-4"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          <DialogTitle className="text-left pr-8">{product.name}</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 gap-0">
+        {/* Imagem do Produto - Full Width */}
+        {product.image_url && (
+          <div className="relative w-full h-56 bg-gray-100">
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-3 top-3 bg-white/90 hover:bg-white rounded-full shadow-md"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
-        <div className="space-y-4">
-          {/* Imagem do Produto */}
-          {product.image_url && (
-            <div className="relative w-full h-48 rounded-lg overflow-hidden">
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
+        {/* Conteúdo com Padding */}
+        <div className="p-6 space-y-5">
+          {/* Header - Sem imagem */}
+          {!product.image_url && (
+            <DialogHeader className="pb-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 top-4"
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <DialogTitle className="text-left pr-8 text-xl font-bold">
+                {product.name}
+              </DialogTitle>
+            </DialogHeader>
           )}
 
-          {/* Descrição */}
-          {product.description && (
-            <div>
+          {/* Nome e Descrição */}
+          <div className="space-y-2">
+            {product.image_url && (
+              <h2 className="text-xl font-bold text-gray-900">{product.name}</h2>
+            )}
+
+            {/* Descrição */}
+            {product.description && (
               <p className="text-sm text-gray-600 leading-relaxed">
                 {product.description}
               </p>
-            </div>
-          )}
+            )}
 
-          {/* Preço Base */}
-          <div className="flex items-center justify-between py-2 border-t border-b">
-            <span className="font-medium">Preço base</span>
-            <span className="text-lg font-bold text-primary">
-              {formatCurrency(product.base_price)}
-            </span>
+            {/* Preço Base */}
+            <div className="pt-2">
+              <span className="text-xl font-bold text-gray-900">
+                {formatCurrency(product.base_price)}
+              </span>
+            </div>
           </div>
 
           {/* Variações/Adicionais */}
           {availableVariations.length > 0 && (
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">Adicionais</Label>
-              {availableVariations.map(variation => (
-                <div
-                  key={variation.id}
-                  className="flex items-center justify-between space-x-2 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center space-x-3 flex-1">
-                    <Checkbox
-                      id={variation.id}
-                      checked={selectedVariations.some(v => v.id === variation.id)}
-                      onCheckedChange={(checked) =>
-                        handleVariationToggle(variation, checked as boolean)
-                      }
-                    />
-                    <label
-                      htmlFor={variation.id}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                    >
-                      {variation.name}
-                    </label>
+            <div className="space-y-3 border-t pt-4">
+              <Label className="text-base font-bold text-gray-900">Adicionais</Label>
+              <div className="space-y-2">
+                {availableVariations.map(variation => (
+                  <div
+                    key={variation.id}
+                    className="flex items-center justify-between space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3 flex-1">
+                      <Checkbox
+                        id={variation.id}
+                        checked={selectedVariations.some(v => v.id === variation.id)}
+                        onCheckedChange={(checked) =>
+                          handleVariationToggle(variation, checked as boolean)
+                        }
+                        className="data-[state=checked]:bg-[#005BFF] data-[state=checked]:border-[#005BFF]"
+                      />
+                      <label
+                        htmlFor={variation.id}
+                        className="text-sm font-medium leading-none cursor-pointer flex-1"
+                      >
+                        {variation.name}
+                      </label>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {variation.price_modifier > 0 ? '+' : ''}
+                      {formatCurrency(variation.price_modifier)}
+                    </span>
                   </div>
-                  <span className="text-sm font-semibold text-primary">
-                    {variation.price_modifier > 0 ? '+' : ''}
-                    {formatCurrency(variation.price_modifier)}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
           {/* Observações */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Observações</Label>
+          <div className="space-y-2 border-t pt-4">
+            <Label htmlFor="notes" className="text-sm font-semibold text-gray-900">
+              Alguma observação?
+            </Label>
             <Textarea
               id="notes"
-              placeholder="Ex: Sem cebola, ponto da carne, etc..."
+              placeholder="Ex: Sem cebola, ponto da carne..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="resize-none"
+              className="resize-none bg-gray-50 border-0 focus-visible:ring-2 focus-visible:ring-[#005BFF]"
             />
           </div>
+        </div>
 
+        {/* Footer Fixo - Estilo iFood */}
+        <div className="sticky bottom-0 bg-white border-t p-4 space-y-3">
           {/* Quantidade */}
-          <div className="space-y-2">
-            <Label>Quantidade</Label>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-900">Quantidade</span>
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => handleQuantityChange(-1)}
                 disabled={quantity <= 1}
+                className="h-9 w-9 rounded-full border-[#005BFF] text-[#005BFF] hover:bg-blue-50 disabled:opacity-50"
               >
                 <Minus className="h-4 w-4" />
               </Button>
-              <Input
-                type="number"
-                min="1"
-                max="99"
-                value={quantity}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value) || 1;
-                  setQuantity(Math.max(1, Math.min(99, value)));
-                }}
-                className="text-center w-20"
-              />
+              <span className="w-8 text-center text-base font-bold">
+                {quantity}
+              </span>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => handleQuantityChange(1)}
                 disabled={quantity >= 99}
+                className="h-9 w-9 rounded-full border-[#005BFF] text-[#005BFF] hover:bg-blue-50 disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
           </div>
-        </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2 mt-6">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="w-full sm:w-auto"
-          >
-            Cancelar
-          </Button>
+          {/* Botão Adicionar */}
           <Button
             onClick={handleAddToCart}
-            className="w-full sm:flex-1 bg-primary text-white hover:bg-primary/90"
+            className="w-full h-12 bg-[#005BFF] hover:bg-[#0047CC] text-white font-bold text-base shadow-md"
             disabled={loading}
           >
             <span className="flex items-center justify-between w-full">
-              <span>Adicionar ao carrinho</span>
-              <span className="font-bold">{formatCurrency(calculateTotal())}</span>
+              <span>Adicionar</span>
+              <span>{formatCurrency(calculateTotal())}</span>
             </span>
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

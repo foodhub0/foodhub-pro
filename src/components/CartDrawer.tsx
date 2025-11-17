@@ -38,17 +38,19 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
   if (items.length === 0) {
     return (
       <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent className="w-full sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Seu Carrinho</SheetTitle>
+        <SheetContent className="w-full sm:max-w-lg bg-gray-50">
+          <SheetHeader className="border-b bg-white -mx-6 px-6 pb-4">
+            <SheetTitle className="text-lg font-bold">Carrinho</SheetTitle>
           </SheetHeader>
           <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-            <ShoppingBag className="h-16 w-16 text-gray-300 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Seu carrinho está vazio
+            <div className="bg-gray-100 rounded-full p-6 mb-4">
+              <ShoppingBag className="h-12 w-12 text-gray-400" />
+            </div>
+            <h3 className="text-base font-bold text-gray-900 mb-1">
+              Sua sacola está vazia
             </h3>
             <p className="text-sm text-gray-500">
-              Adicione itens do cardápio para começar seu pedido
+              Adicione itens para começar
             </p>
           </div>
         </SheetContent>
@@ -58,60 +60,60 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
-        <SheetHeader>
+      <SheetContent className="w-full sm:max-w-lg flex flex-col bg-gray-50">
+        <SheetHeader className="border-b bg-white -mx-6 px-6 pb-4">
           <div className="flex items-center justify-between">
-            <SheetTitle>Seu Carrinho ({items.length})</SheetTitle>
+            <SheetTitle className="text-lg font-bold">Carrinho ({items.length})</SheetTitle>
             <Button
               variant="ghost"
               size="sm"
               onClick={clearCart}
-              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+              className="text-red-500 hover:text-red-600 hover:bg-red-50 h-8"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
               Limpar
             </Button>
           </div>
         </SheetHeader>
 
         <ScrollArea className="flex-1 -mx-6 px-6 my-4">
-          <div className="space-y-4">
+          <div className="space-y-3">
             {items.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-lg border p-4 space-y-3"
+                className="bg-white rounded-lg p-3 shadow-sm"
               >
                 {/* Header do Item */}
-                <div className="flex gap-3">
+                <div className="flex gap-3 mb-3">
                   {/* Imagem */}
                   {item.productImage ? (
                     <img
                       src={item.productImage}
                       alt={item.productName}
-                      className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                      className="w-16 h-16 object-cover rounded-md flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs text-gray-400">Sem foto</span>
+                    <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
+                      <span className="text-[10px] text-gray-400">Sem foto</span>
                     </div>
                   )}
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-gray-900 mb-1">
+                    <h4 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">
                       {item.productName}
                     </h4>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs text-gray-500">
                       {formatCurrency(item.basePrice)}
                     </p>
 
                     {/* Variações */}
                     {item.variations.length > 0 && (
-                      <div className="mt-2 space-y-1">
+                      <div className="mt-1.5 space-y-0.5">
                         {item.variations.map((variation) => (
                           <div
                             key={variation.id}
-                            className="text-xs text-gray-500 flex justify-between"
+                            className="text-[11px] text-gray-500 flex justify-between"
                           >
                             <span>+ {variation.name}</span>
                             <span>
@@ -124,7 +126,7 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
 
                     {/* Observações */}
                     {item.notes && (
-                      <div className="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                      <div className="mt-1.5 text-[11px] text-gray-500 bg-gray-50 p-1.5 rounded">
                         <strong>Obs:</strong> {item.notes}
                       </div>
                     )}
@@ -132,24 +134,24 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
                 </div>
 
                 {/* Footer do Item */}
-                <div className="flex items-center justify-between pt-3 border-t">
+                <div className="flex items-center justify-between pt-2.5 border-t">
                   {/* Controle de Quantidade */}
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-7 w-7 rounded-full border-[#005BFF] text-[#005BFF] hover:bg-blue-50"
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
-                    <span className="w-8 text-center font-medium">
+                    <span className="w-6 text-center text-sm font-semibold">
                       {item.quantity}
                     </span>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-7 w-7 rounded-full border-[#005BFF] text-[#005BFF] hover:bg-blue-50"
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
                     >
                       <Plus className="h-3 w-3" />
@@ -157,17 +159,17 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
                   </div>
 
                   {/* Subtotal do Item */}
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-primary">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-gray-900">
                       {formatCurrency(getItemTotal(item))}
                     </span>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                      className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
                       onClick={() => removeItem(item.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -176,11 +178,11 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
           </div>
         </ScrollArea>
 
-        <SheetFooter className="flex-col gap-4 border-t pt-4">
+        <SheetFooter className="flex-col gap-3 border-t pt-4 bg-white -mx-6 px-6">
           {/* Total */}
-          <div className="flex items-center justify-between text-lg font-bold">
-            <span>Total</span>
-            <span className="text-primary text-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Total</span>
+            <span className="text-xl font-bold text-gray-900">
               {formatCurrency(getTotal())}
             </span>
           </div>
@@ -188,16 +190,16 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
           {/* Botão de Finalizar */}
           <Button
             onClick={handleCheckout}
-            className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90"
+            className="w-full h-12 text-base font-bold bg-[#005BFF] hover:bg-[#0047CC] shadow-md"
             size="lg"
           >
             Finalizar Pedido
           </Button>
 
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={onClose}
-            className="w-full"
+            className="w-full text-[#005BFF] hover:bg-blue-50"
           >
             Continuar Comprando
           </Button>
