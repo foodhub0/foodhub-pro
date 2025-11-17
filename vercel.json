@@ -1,40 +1,5 @@
 {
-  "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite",
   "rewrites": [
-    {
-      "source": "/m/:slug",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/m/:slug/:path*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/diagnostic/:slug",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/m/[^/]+",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/m/[^/]+/(.*)",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
-  "cleanUrls": true,
-  "trailingSlash": false
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
