@@ -1,22 +1,5 @@
 {
   "rewrites": [
-    {
-      "source": "/m/:slug",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/m/:slug/:path*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/diagnostic/:slug",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-  "cleanUrls": true,
-  "trailingSlash": false
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
