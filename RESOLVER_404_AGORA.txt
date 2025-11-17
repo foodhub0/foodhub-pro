@@ -1,0 +1,80 @@
+═══════════════════════════════════════════════════════════════
+🔴 CARDÁPIO DÁ 404? FAÇA ISTO AGORA! (2 minutos)
+═══════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────┐
+│ OPÇÃO 1: PÁGINA DE DIAGNÓSTICO (MAIS FÁCIL)                │
+└─────────────────────────────────────────────────────────────┘
+
+1. Abra no navegador:
+
+   http://localhost:8080/diagnostic/teste
+
+   (pode usar qualquer slug, a página vai mostrar os disponíveis)
+
+2. A página vai te mostrar:
+   ✅ Qual é o slug correto
+   ✅ Se precisa executar SQL
+   ✅ Qual é o erro exato
+
+3. Copie a URL do cardápio que aparece lá
+
+═══════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────┐
+│ OPÇÃO 2: EXECUTAR SQL MANUALMENTE                          │
+└─────────────────────────────────────────────────────────────┘
+
+1. Abra este link:
+
+   https://supabase.com/dashboard/project/wisikawnpzrrfzqutatl/sql
+
+2. Cole EXATAMENTE isto:
+
+DROP POLICY IF EXISTS "Public can view active restaurants" ON restaurants;
+CREATE POLICY "Public can view all restaurants" ON restaurants FOR SELECT USING (true);
+
+3. Clique em RUN
+
+4. Pronto! Agora tente acessar o cardápio novamente
+
+═══════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────┐
+│ OPÇÃO 3: VER O SLUG CORRETO NO TERMINAL                    │
+└─────────────────────────────────────────────────────────────┘
+
+No terminal, execute:
+
+   node check-slug.js
+
+Vai mostrar todos os restaurantes e suas URLs.
+
+═══════════════════════════════════════════════════════════════
+
+❓ AINDA NÃO CRIOU UM RESTAURANTE?
+
+Acesse:
+   http://localhost:8080/setup
+
+Crie seu restaurante e anote o SLUG que foi gerado.
+
+═══════════════════════════════════════════════════════════════
+
+📝 FORMATO CORRETO DA URL:
+
+   http://localhost:8080/m/SEU-SLUG
+
+   Exemplo:
+   http://localhost:8080/m/meu-restaurante
+
+═══════════════════════════════════════════════════════════════
+
+🆘 PRECISA DE AJUDA?
+
+Acesse a página de diagnóstico e tire um print:
+   http://localhost:8080/diagnostic/seu-slug
+
+Me envie o print que eu te ajudo!
+
+═══════════════════════════════════════════════════════════════
