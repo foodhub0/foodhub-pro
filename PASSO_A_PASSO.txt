@@ -1,0 +1,55 @@
+═══════════════════════════════════════════════════════════════
+🚨 RESOLVER O 404 AGORA (30 SEGUNDOS)
+═══════════════════════════════════════════════════════════════
+
+PASSO 1: Abra este link
+───────────────────────────────────────────────────────────────
+https://supabase.com/dashboard/project/wisikawnpzrrfzqutatl/sql
+───────────────────────────────────────────────────────────────
+
+
+PASSO 2: Cole este SQL (copie tudo abaixo da linha)
+───────────────────────────────────────────────────────────────
+
+DROP POLICY IF EXISTS "Public can view active restaurants" ON restaurants;
+
+CREATE POLICY "Public can view all restaurants" ON restaurants
+  FOR SELECT USING (true);
+
+SELECT
+  '✅ CORRIGIDO!' as status,
+  'https://foodhub-idsb2hnel-marcelos-projects-1cb1a1ac.vercel.app/m/' || slug as url_producao
+FROM restaurants
+WHERE slug = 'pepperspizza';
+
+───────────────────────────────────────────────────────────────
+
+
+PASSO 3: Clique no botão verde "RUN" (ou Ctrl+Enter)
+───────────────────────────────────────────────────────────────
+
+
+PASSO 4: Você verá a mensagem:
+───────────────────────────────────────────────────────────────
+✅ CORRIGIDO!
+url_producao: https://foodhub-idsb2hnel-marcelos-projects-1cb1a1ac.vercel.app/m/pepperspizza
+───────────────────────────────────────────────────────────────
+
+
+PASSO 5: Copie a URL que apareceu e cole no navegador
+───────────────────────────────────────────────────────────────
+O cardápio vai abrir SEM ERRO 404!
+───────────────────────────────────────────────────────────────
+
+
+═══════════════════════════════════════════════════════════════
+✅ PRONTO! O ERRO 404 FOI CORRIGIDO!
+═══════════════════════════════════════════════════════════════
+
+Agora você pode:
+  ✅ Compartilhar o link do cardápio
+  ✅ Clientes podem ver os produtos
+  ✅ Adicionar itens ao carrinho
+  ✅ Fazer pedidos
+
+═══════════════════════════════════════════════════════════════
