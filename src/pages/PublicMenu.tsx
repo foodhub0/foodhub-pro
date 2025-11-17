@@ -8,6 +8,9 @@ import { Search, Star, Clock, MapPin, Phone, ShoppingCart, User, Share2 } from "
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/contexts/CartContext";
+import { ProductModal } from "@/components/ProductModal";
+import { CartDrawer } from "@/components/CartDrawer";
 
 interface Product {
   id: string;
@@ -17,6 +20,7 @@ interface Product {
   base_price: number;
   is_featured: boolean;
   category_id: string | null;
+  restaurant_id: string;
 }
 
 interface Category {
@@ -43,13 +47,16 @@ interface Restaurant {
 const PublicMenu = () => {
   const { slug } = useParams<{ slug: string }>();
   const { toast } = useToast();
+  const { getItemCount } = useCart();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [cartCount, setCartCount] = useState(0);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (slug) {
@@ -80,7 +87,7 @@ const PublicMenu = () => {
 
     const { data: productsData } = await supabase
       .from("products")
-      .select("*")
+      .select("id, name, description, image_url, base_price, is_featured, category_id, restaurant_id")
       .eq("restaurant_id", restaurantData.id)
       .eq("is_active", true)
       .order("name");
@@ -129,12 +136,13 @@ const PublicMenu = () => {
     }
   };
 
-  const handleAddToCart = (product: Product) => {
-    setCartCount(cartCount + 1);
-    toast({
-      title: "Adicionado ao carrinho!",
-      description: `${product.name} foi adicionado ao seu pedido`,
-    });
+  const handleProductClick = (product: Product) => {
+    setSelectedProduct(product);
+    setIsProductModalOpen(true);
+  };
+
+  const handleOpenCart = () => {
+    setIsCartDrawerOpen(true);
   };
 
   if (loading) {
@@ -204,11 +212,12 @@ const PublicMenu = () => {
                 size="icon"
                 className="rounded-full relative"
                 aria-label="Ver carrinho"
+                onClick={handleOpenCart}
               >
                 <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
+                {getItemCount() > 0 && (
                   <span className="absolute -top-1 -right-1 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
-                    {cartCount}
+                    {getItemCount()}
                   </span>
                 )}
               </Button>
@@ -373,7 +382,7 @@ const PublicMenu = () => {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  onAddToCart={handleAddToCart}
+                  onClick={handleProductClick}
                   isFeatured
                 />
               ))}
@@ -403,7 +412,7 @@ const PublicMenu = () => {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  onAddToCart={handleAddToCart}
+                  onClick={handleProductClick}
                 />
               ))}
             </div>
@@ -454,6 +463,20 @@ const PublicMenu = () => {
           </div>
         </div>
       </footer>
+
+      {/* Product Modal */}
+      <ProductModal
+        product={selectedProduct}
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
+      />
+
+      {/* Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartDrawerOpen}
+        onClose={() => setIsCartDrawerOpen(false)}
+        restaurantSlug={slug}
+      />
     </div>
   );
 };
@@ -461,11 +484,11 @@ const PublicMenu = () => {
 // Product Card Component with Lazy Loading
 interface ProductCardProps {
   product: Product;
-  onAddToCart: (product: Product) => void;
+  onClick: (product: Product) => void;
   isFeatured?: boolean;
 }
 
-const ProductCard = ({ product, onAddToCart, isFeatured = false }: ProductCardProps) => {
+const ProductCard = ({ product, onClick, isFeatured = false }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -484,6 +507,7 @@ const ProductCard = ({ product, onAddToCart, isFeatured = false }: ProductCardPr
       )}
       role="article"
       aria-label={`${product.name} - ${formatCurrency(product.base_price)}`}
+      onClick={() => onClick(product)}
     >
       <div className="flex gap-4 p-4">
         <div className="flex-1 min-w-0">
@@ -507,7 +531,10 @@ const ProductCard = ({ product, onAddToCart, isFeatured = false }: ProductCardPr
             <Button
               size="sm"
               className="rounded-full h-9 px-5 text-sm font-medium shadow-md hover:shadow-lg transition-all"
-              onClick={() => onAddToCart(product)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick(product);
+              }}
               aria-label={`Adicionar ${product.name} ao carrinho`}
             >
               Adicionar
