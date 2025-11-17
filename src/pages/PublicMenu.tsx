@@ -139,41 +139,41 @@ const PublicMenu = () => {
     <div className="min-h-screen bg-white">
       {/* Banner de Restaurante Fechado */}
       {!restaurant.is_open && (
-        <div className="bg-amber-50 border-b border-amber-200 py-2 px-4 text-center">
-          <span className="text-sm text-amber-800">⚠️ Este restaurante está temporariamente fechado</span>
+        <div className="bg-amber-50 border-b border-amber-200 py-2.5 px-4 text-center">
+          <span className="text-sm text-amber-800 font-medium">⚠️ Este restaurante está temporariamente fechado</span>
         </div>
       )}
 
-      {/* Header Estilo iFood - Minimalista */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+      {/* Header Estilo iFood - Ultra Minimalista */}
+      <header className="sticky top-0 z-50 bg-white shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between gap-4">
             {/* Logo + Nome + Info (Estilo iFood) */}
-            <div className="flex items-center gap-3 flex-1">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               {restaurant.logo_url && (
                 <img
                   src={restaurant.logo_url}
                   alt={restaurant.name}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-gray-100"
+                  className="w-12 h-12 rounded-lg object-cover flex-shrink-0 shadow-sm"
                 />
               )}
-              <div className="flex flex-col">
-                <h1 className="text-lg font-bold text-[#003A75]">{restaurant.name}</h1>
-                <div className="flex items-center gap-3 text-xs text-gray-600">
+              <div className="flex flex-col min-w-0">
+                <h1 className="text-base font-bold text-gray-900 truncate">{restaurant.name}</h1>
+                <div className="flex items-center gap-2.5 text-xs text-gray-600">
                   {restaurant.delivery_time_estimate && (
                     <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
+                      <Clock className="h-3.5 w-3.5" />
                       {restaurant.delivery_time_estimate} min
                     </span>
                   )}
                   {restaurant.delivery_fee !== null && (
                     <span className="flex items-center gap-1">
-                      <span>🛵</span>
+                      <span className="text-sm">🛵</span>
                       {restaurant.delivery_fee === 0 ? 'Grátis' : formatCurrency(restaurant.delivery_fee)}
                     </span>
                   )}
                   <span className="flex items-center gap-1">
-                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                     4.8
                   </span>
                 </div>
@@ -185,11 +185,11 @@ const PublicMenu = () => {
               variant="ghost"
               size="icon"
               onClick={handleOpenCart}
-              className="relative h-12 w-12 rounded-full hover:bg-gray-100"
+              className="relative h-11 w-11 rounded-full hover:bg-blue-50 transition-colors flex-shrink-0"
             >
               <ShoppingCart className="h-5 w-5 text-[#005BFF]" />
               {getItemCount() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#005BFF] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                <span className="absolute -top-0.5 -right-0.5 bg-[#005BFF] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold shadow-md">
                   {getItemCount()}
                 </span>
               )}
@@ -201,51 +201,51 @@ const PublicMenu = () => {
       {/* Container Principal */}
       <main className="max-w-5xl mx-auto px-4 pb-8">
         {/* Informações e Busca - Estilo iFood Minimalista */}
-        <div className="py-4 space-y-4">
-          {/* Info Rápida */}
+        <div className="py-4 space-y-3">
+          {/* Busca - Destaque Principal */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Buscar no cardápio"
+              className="pl-11 pr-4 h-12 bg-gray-50 border-0 rounded-lg text-sm placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#005BFF] focus-visible:bg-white transition-all"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Info Rápida - Compacta */}
           {(restaurant.phone || restaurant.address) && (
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
               {restaurant.address && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4 text-[#3DA5F4]" />
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-gray-400" />
                   {restaurant.address}
                 </span>
               )}
               {restaurant.phone && (
-                <span className="flex items-center gap-1">
-                  <Phone className="h-4 w-4 text-[#3DA5F4]" />
+                <span className="flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5 text-gray-400" />
                   {restaurant.phone}
                 </span>
               )}
             </div>
           )}
-
-          {/* Busca */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar no cardápio"
-              className="pl-10 h-11 bg-gray-50 border-gray-200 rounded-xl text-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
         </div>
 
-        {/* Categorias - Chips Estilo iFood */}
+        {/* Categorias - Pills Estilo iFood */}
         {categories.length > 0 && (
-          <div className="sticky top-[73px] z-40 bg-white -mx-4 px-4 pb-3 border-b border-gray-100">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <div className="sticky top-[80px] z-40 bg-white -mx-4 px-4 py-3 shadow-sm">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setSelectedCategory(null)}
                 className={cn(
                   "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0",
                   !selectedCategory
-                    ? "bg-[#005BFF] text-white shadow-sm"
-                    : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300"
+                    ? "bg-[#005BFF] text-white shadow-md"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 )}
               >
-                Todos os produtos
+                Todos
               </button>
               {categories.map((category) => (
                 <button
@@ -254,8 +254,8 @@ const PublicMenu = () => {
                   className={cn(
                     "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0",
                     selectedCategory === category.id
-                      ? "bg-[#005BFF] text-white shadow-sm"
-                      : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300"
+                      ? "bg-[#005BFF] text-white shadow-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   )}
                 >
                   {category.name}
@@ -266,10 +266,10 @@ const PublicMenu = () => {
         )}
 
         {/* Lista de Produtos - Estilo iFood */}
-        <div className="mt-6 space-y-6">
+        <div className="mt-4 space-y-6">
           {filteredProducts.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-gray-500">
+            <div className="text-center py-20">
+              <p className="text-gray-400 text-sm">
                 {searchQuery
                   ? "Nenhum produto encontrado"
                   : "Nenhum produto disponível"}
@@ -280,11 +280,11 @@ const PublicMenu = () => {
               {/* Produtos em Destaque */}
               {!selectedCategory && !searchQuery && products.some(p => p.is_featured) && (
                 <section className="space-y-3">
-                  <h2 className="text-xl font-bold text-[#003A75] flex items-center gap-2">
-                    <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
+                  <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 px-1">
+                    <Star className="h-4.5 w-4.5 fill-amber-400 text-amber-400" />
                     Destaques
                   </h2>
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {products.filter(p => p.is_featured).map((product) => (
                       <ProductCard
                         key={product.id}
@@ -300,11 +300,11 @@ const PublicMenu = () => {
               {/* Cardápio Completo */}
               <section className="space-y-3">
                 {(!selectedCategory && !searchQuery) && (
-                  <h2 className="text-xl font-bold text-[#003A75]">
+                  <h2 className="text-lg font-bold text-gray-900 px-1">
                     Cardápio
                   </h2>
                 )}
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {filteredProducts.map((product) => (
                     <ProductCard
                       key={product.id}
@@ -336,7 +336,7 @@ const PublicMenu = () => {
   );
 };
 
-// Product Card - Estilo iFood
+// Product Card - Estilo iFood Refinado
 interface ProductCardProps {
   product: Product;
   onClick: (product: Product) => void;
@@ -349,11 +349,11 @@ const ProductCard = ({ product, onClick, formatCurrency }: ProductCardProps) => 
   return (
     <div
       onClick={() => onClick(product)}
-      className="flex gap-4 p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow cursor-pointer"
+      className="flex gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group"
     >
       {/* Conteúdo à Esquerda */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        <h3 className="text-base font-semibold text-[#003A75] mb-1 line-clamp-2">
+      <div className="flex-1 min-w-0 flex flex-col py-1">
+        <h3 className="text-base font-semibold text-gray-900 mb-1.5 line-clamp-2 group-hover:text-[#005BFF] transition-colors">
           {product.name}
         </h3>
         {product.description && (
@@ -362,7 +362,7 @@ const ProductCard = ({ product, onClick, formatCurrency }: ProductCardProps) => 
           </p>
         )}
         <div className="mt-auto">
-          <span className="text-lg font-bold text-[#005BFF]">
+          <span className="text-base font-bold text-gray-900">
             {formatCurrency(product.base_price)}
           </span>
         </div>
@@ -375,19 +375,19 @@ const ProductCard = ({ product, onClick, formatCurrency }: ProductCardProps) => 
             <img
               src={product.image_url}
               alt={product.name}
-              className="w-32 h-32 object-cover rounded-xl"
+              className="w-28 h-28 object-cover rounded-lg shadow-sm"
               onError={() => setImageError(true)}
               loading="lazy"
             />
             {product.is_featured && (
-              <div className="absolute -top-2 -right-2 bg-amber-400 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
-                ★ Destaque
+              <div className="absolute -top-1.5 -right-1.5 bg-amber-400 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold shadow-md flex items-center gap-0.5">
+                ★
               </div>
             )}
           </div>
         ) : (
-          <div className="w-32 h-32 bg-gray-100 rounded-xl flex items-center justify-center">
-            <span className="text-xs text-gray-400">Sem imagem</span>
+          <div className="w-28 h-28 bg-gray-100 rounded-lg flex items-center justify-center">
+            <span className="text-[10px] text-gray-400">Sem imagem</span>
           </div>
         )}
       </div>
