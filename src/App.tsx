@@ -14,7 +14,7 @@ import Categories from "./pages/Categories";
 import Products from "./pages/Products";
 import MenuPreview from "./pages/MenuPreview";
 import Tables from "./pages/Tables";
-import Orders from "./pages/Orders";
+import OrdersKanban from "./pages/OrdersKanban";
 import Couriers from "./pages/Couriers";
 import PublicMenu from "./pages/PublicMenu";
 import Checkout from "./pages/Checkout";
@@ -40,7 +40,7 @@ const App = () => (
             <Route path="/products" element={<Products />} />
             <Route path="/menu-preview" element={<MenuPreview />} />
             <Route path="/tables" element={<Tables />} />
-            <Route path="/orders" element={<Orders />} />
+            <Route path="/orders" element={<OrdersKanban />} />
             <Route path="/couriers" element={<Couriers />} />
             <Route path="/m/:slug" element={<PublicMenu />} />
             <Route path="/m/:slug/checkout" element={<Checkout />} />
