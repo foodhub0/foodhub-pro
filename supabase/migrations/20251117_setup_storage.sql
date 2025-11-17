@@ -26,10 +26,10 @@ USING (bucket_id = 'product-images');
 CREATE POLICY "Usuários podem atualizar suas próprias imagens"
 ON storage.objects FOR UPDATE
 TO authenticated
-USING (bucket_id = 'product-images' AND auth.uid()::text = owner);
+USING (bucket_id = 'product-images' AND auth.uid() = owner);
 
 -- Permitir deleção para usuários autenticados (donos)
 CREATE POLICY "Usuários podem deletar suas próprias imagens"
 ON storage.objects FOR DELETE
 TO authenticated
-USING (bucket_id = 'product-images' AND auth.uid()::text = owner);
+USING (bucket_id = 'product-images' AND auth.uid() = owner);
