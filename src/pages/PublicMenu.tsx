@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Search, Star, Clock, MapPin, Phone, ShoppingCart } from "lucide-react";
+import { Search, Star, Clock, MapPin, Phone, ShoppingCart, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -291,6 +291,7 @@ const PublicMenu = () => {
                         product={product}
                         onClick={handleProductClick}
                         formatCurrency={formatCurrency}
+                        restaurant={restaurant}
                       />
                     ))}
                   </div>
@@ -311,6 +312,7 @@ const PublicMenu = () => {
                       product={product}
                       onClick={handleProductClick}
                       formatCurrency={formatCurrency}
+                      restaurant={restaurant!}
                     />
                   ))}
                 </div>
@@ -341,15 +343,78 @@ interface ProductCardProps {
   product: Product;
   onClick: (product: Product) => void;
   formatCurrency: (value: number) => string;
+  restaurant: Restaurant;
 }
 
-const ProductCard = ({ product, onClick, formatCurrency }: ProductCardProps) => {
+const ProductCard = ({ product, onClick, formatCurrency, restaurant }: ProductCardProps) => {
   const [imageError, setImageError] = useState(false);
+  const [hasVariations, setHasVariations] = useState(false);
+  const [loadingVariations, setLoadingVariations] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const { addItem } = useCart();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    checkVariations();
+  }, [product.id]);
+
+  const checkVariations = async () => {
+    const { data } = await supabase
+      .from('product_variations')
+      .select('id')
+      .eq('product_id', product.id)
+      .eq('is_active', true);
+
+    setHasVariations((data?.length || 0) > 0);
+    setLoadingVariations(false);
+  };
+
+  const handleQuickAdd = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (hasVariations) {
+      onClick(product);
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      addItem({
+        productId: product.id,
+        productName: product.name,
+        productImage: product.image_url,
+        basePrice: product.base_price,
+        quantity: 1,
+        variations: [],
+        notes: '',
+        restaurantId: restaurant.id,
+      });
+
+      setJustAdded(true);
+      toast({
+        title: 'Adicionado ao carrinho!',
+        description: product.name,
+      });
+
+      setTimeout(() => {
+        setJustAdded(false);
+      }, 2000);
+    } catch (error) {
+      toast({
+        title: 'Erro ao adicionar',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <div
       onClick={() => onClick(product)}
-      className="flex gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group"
+      className="flex gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group relative"
     >
       {/* Conteúdo à Esquerda */}
       <div className="flex-1 min-w-0 flex flex-col py-1">
@@ -361,10 +426,37 @@ const ProductCard = ({ product, onClick, formatCurrency }: ProductCardProps) => 
             {product.description}
           </p>
         )}
-        <div className="mt-auto">
+        <div className="mt-auto flex items-center justify-between">
           <span className="text-base font-bold text-gray-900">
             {formatCurrency(product.base_price)}
           </span>
+
+          {/* Botão Adicionar - Estilo iFood */}
+          {!loadingVariations && (
+            <Button
+              onClick={handleQuickAdd}
+              disabled={isAdding}
+              size="sm"
+              className={cn(
+                "h-8 px-3 rounded-full font-semibold text-xs transition-all shadow-sm",
+                justAdded
+                  ? "bg-green-500 hover:bg-green-600 text-white"
+                  : "bg-white border-2 border-[#005BFF] text-[#005BFF] hover:bg-[#005BFF] hover:text-white"
+              )}
+            >
+              {justAdded ? (
+                <>
+                  <Check className="h-3.5 w-3.5 mr-1" />
+                  Adicionado
+                </>
+              ) : (
+                <>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  {hasVariations ? 'Ver opções' : 'Adicionar'}
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -380,8 +472,9 @@ const ProductCard = ({ product, onClick, formatCurrency }: ProductCardProps) => 
               loading="lazy"
             />
             {product.is_featured && (
-              <div className="absolute -top-1.5 -right-1.5 bg-amber-400 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold shadow-md flex items-center gap-0.5">
-                ★
+              <div className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-amber-400 to-amber-500 text-white text-[10px] px-2.5 py-1 rounded-full font-bold shadow-lg flex items-center gap-0.5">
+                <Star className="h-2.5 w-2.5 fill-white" />
+                Destaque
               </div>
             )}
           </div>

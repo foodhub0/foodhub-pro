@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, CreditCard, Smartphone, Wallet, DollarSign } from 'lucide-react';
+import { ArrowLeft, CreditCard, Smartphone, Wallet, DollarSign, Tag, X, ShoppingBag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Restaurant {
@@ -47,6 +47,11 @@ const Checkout = () => {
   // Pagamento
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit_card' | 'debit_card' | 'cash'>('pix');
   const [changeFor, setChangeFor] = useState('');
+
+  // Cupom de desconto
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [showCouponInput, setShowCouponInput] = useState(false);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -97,8 +102,46 @@ const Checkout = () => {
     return restaurant?.delivery_fee || 0;
   };
 
+  const handleApplyCoupon = () => {
+    // Simulação de validação de cupom
+    if (couponCode.toUpperCase() === 'FOODHUB10') {
+      setAppliedCoupon({ code: couponCode, discount: 0.10 });
+      setShowCouponInput(false);
+      setCouponCode('');
+      toast({
+        title: 'Cupom aplicado!',
+        description: '10% de desconto no seu pedido',
+      });
+    } else if (couponCode.toUpperCase() === 'PRIMEIRACOMPRA') {
+      setAppliedCoupon({ code: couponCode, discount: 0.15 });
+      setShowCouponInput(false);
+      setCouponCode('');
+      toast({
+        title: 'Cupom aplicado!',
+        description: '15% de desconto no seu pedido',
+      });
+    } else {
+      setAppliedCoupon(null);
+      toast({
+        title: 'Cupom inválido',
+        description: 'O cupom informado não é válido',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+  };
+
+  const getDiscountAmount = () => {
+    if (!appliedCoupon) return 0;
+    return getTotal() * appliedCoupon.discount;
+  };
+
   const calculateTotal = () => {
-    return getTotal() + calculateDeliveryFee();
+    return getTotal() + calculateDeliveryFee() - getDiscountAmount();
   };
 
   const validateForm = () => {
@@ -485,23 +528,146 @@ const Checkout = () => {
           )}
         </Card>
 
-        {/* Resumo do Pedido */}
+        {/* Itens do Pedido - Estilo iFood */}
         <Card className="p-6">
+          <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5" />
+            Itens do Pedido ({items.length})
+          </h2>
+          <div className="space-y-3 max-h-60 overflow-y-auto">
+            {items.map((item) => (
+              <div key={item.id} className="flex gap-3 pb-3 border-b last:border-0">
+                {item.productImage && (
+                  <img
+                    src={item.productImage}
+                    alt={item.productName}
+                    className="w-14 h-14 object-cover rounded-md flex-shrink-0"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                        {item.quantity}x {item.productName}
+                      </p>
+                      {item.variations.length > 0 && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {item.variations.map(v => v.name).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                      {formatCurrency(getItemTotal(item))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Cupom de Desconto - Estilo iFood */}
+        <Card className="p-6">
+          <h2 className="font-semibold text-lg mb-4">Cupom de Desconto</h2>
+          {!appliedCoupon ? (
+            <div>
+              {!showCouponInput ? (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCouponInput(true)}
+                  className="w-full justify-start text-[#005BFF] border-[#005BFF] hover:bg-blue-50 h-11"
+                >
+                  <Tag className="h-4 w-4 mr-2" />
+                  <span className="font-medium">Adicionar cupom de desconto</span>
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Digite o cupom"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      className="h-11 uppercase"
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                    />
+                    <Button
+                      onClick={handleApplyCoupon}
+                      className="bg-[#005BFF] hover:bg-[#0047CC] h-11 px-6"
+                    >
+                      Aplicar
+                    </Button>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowCouponInput(false);
+                      setCouponCode('');
+                    }}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    Cancelar
+                  </Button>
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-xs text-blue-800 font-medium mb-1">Cupons disponíveis:</p>
+                    <p className="text-xs text-blue-700">• FOODHUB10 - 10% de desconto</p>
+                    <p className="text-xs text-blue-700">• PRIMEIRACOMPRA - 15% de desconto</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-100 rounded-full p-2">
+                    <Tag className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-green-800">
+                      {appliedCoupon.code}
+                    </span>
+                    <span className="text-xs text-green-600">
+                      {(appliedCoupon.discount * 100).toFixed(0)}% de desconto aplicado
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={removeCoupon}
+                  className="h-8 w-8 text-green-600 hover:text-green-800 hover:bg-green-100"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Resumo do Pedido */}
+        <Card className="p-6 bg-gradient-to-br from-blue-50 to-white border-2 border-blue-100">
           <h2 className="font-semibold text-lg mb-4">Resumo do Pedido</h2>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span>Subtotal ({items.length} {items.length === 1 ? 'item' : 'itens'})</span>
-              <span>{formatCurrency(getTotal())}</span>
+              <span className="text-gray-600">Subtotal ({items.length} {items.length === 1 ? 'item' : 'itens'})</span>
+              <span className="font-medium text-gray-900">{formatCurrency(getTotal())}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>Taxa de entrega</span>
-              <span>
+              <span className="text-gray-600">Taxa de entrega</span>
+              <span className="font-medium text-gray-900">
                 {calculateDeliveryFee() === 0 ? 'Grátis' : formatCurrency(calculateDeliveryFee())}
               </span>
             </div>
-            <div className="flex justify-between font-bold text-lg pt-2 border-t">
-              <span>Total</span>
-              <span className="text-primary">{formatCurrency(calculateTotal())}</span>
+            {appliedCoupon && (
+              <div className="flex justify-between text-sm">
+                <span className="text-green-600 font-medium">Desconto ({appliedCoupon.code})</span>
+                <span className="text-green-600 font-semibold">-{formatCurrency(getDiscountAmount())}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-xl pt-3 border-t-2 border-blue-200">
+              <span className="text-gray-900">Total</span>
+              <span className="text-[#005BFF]">{formatCurrency(calculateTotal())}</span>
             </div>
           </div>
         </Card>

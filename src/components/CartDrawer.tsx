@@ -7,9 +7,11 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, Tag, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -20,12 +22,44 @@ interface CartDrawerProps {
 export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps) => {
   const { items, getTotal, getItemTotal, updateQuantity, removeItem, clearCart } = useCart();
   const navigate = useNavigate();
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [showCouponInput, setShowCouponInput] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
     }).format(value);
+  };
+
+  const handleApplyCoupon = () => {
+    // Simulação de validação de cupom
+    if (couponCode.toUpperCase() === 'FOODHUB10') {
+      setAppliedCoupon({ code: couponCode, discount: 0.10 });
+      setShowCouponInput(false);
+      setCouponCode('');
+    } else if (couponCode.toUpperCase() === 'PRIMEIRACOMPRA') {
+      setAppliedCoupon({ code: couponCode, discount: 0.15 });
+      setShowCouponInput(false);
+      setCouponCode('');
+    } else {
+      setAppliedCoupon(null);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+  };
+
+  const getDiscountAmount = () => {
+    if (!appliedCoupon) return 0;
+    return getTotal() * appliedCoupon.discount;
+  };
+
+  const getFinalTotal = () => {
+    return getTotal() - getDiscountAmount();
   };
 
   const handleCheckout = () => {
@@ -179,12 +213,96 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
         </ScrollArea>
 
         <SheetFooter className="flex-col gap-3 border-t pt-4 bg-white -mx-6 px-6">
-          {/* Total */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Total</span>
-            <span className="text-xl font-bold text-gray-900">
-              {formatCurrency(getTotal())}
-            </span>
+          {/* Cupom de Desconto - Estilo iFood */}
+          {!appliedCoupon ? (
+            <div className="mb-2">
+              {!showCouponInput ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowCouponInput(true)}
+                  className="w-full justify-start text-[#005BFF] hover:bg-blue-50 h-10 px-3"
+                >
+                  <Tag className="h-4 w-4 mr-2" />
+                  <span className="text-sm font-medium">Adicionar cupom de desconto</span>
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Digite o cupom"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      className="h-10 text-sm uppercase"
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                    />
+                    <Button
+                      onClick={handleApplyCoupon}
+                      size="sm"
+                      className="bg-[#005BFF] hover:bg-[#0047CC] h-10 px-4"
+                    >
+                      Aplicar
+                    </Button>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowCouponInput(false);
+                      setCouponCode('');
+                    }}
+                    className="text-xs text-gray-500 hover:text-gray-700 h-6"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mb-2 bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-green-600" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-medium text-green-800">
+                      Cupom aplicado: {appliedCoupon.code}
+                    </span>
+                    <span className="text-xs text-green-600">
+                      -{(appliedCoupon.discount * 100).toFixed(0)}% de desconto
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={removeCoupon}
+                  className="h-6 w-6 text-green-600 hover:text-green-800 hover:bg-green-100"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Resumo de Valores - Estilo iFood */}
+          <div className="space-y-2 pb-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Subtotal</span>
+              <span className="text-gray-900">{formatCurrency(getTotal())}</span>
+            </div>
+
+            {appliedCoupon && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-green-600">Desconto ({appliedCoupon.code})</span>
+                <span className="text-green-600">-{formatCurrency(getDiscountAmount())}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-2 border-t">
+              <span className="text-base font-bold text-gray-900">Total</span>
+              <span className="text-xl font-bold text-[#005BFF]">
+                {formatCurrency(getFinalTotal())}
+              </span>
+            </div>
           </div>
 
           {/* Botão de Finalizar */}
