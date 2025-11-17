@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Routing</title>
+  <script>
+    // Debug: ver qual rota está sendo acessada
+    console.log('=== DEBUG ROUTING ===');
+    console.log('URL completa:', window.location.href);
+    console.log('Pathname:', window.location.pathname);
+    console.log('Hash:', window.location.hash);
+    console.log('Search:', window.location.search);
+
+    // Verificar se há redirect no sessionStorage
+    const redirectPath = sessionStorage.getItem('redirectPath');
+    console.log('redirectPath no sessionStorage:', redirectPath);
+
+    // Ver se está na rota correta
+    if (window.location.pathname.startsWith('/m/')) {
+      console.log('✅ Está na rota /m/:slug');
+      console.log('Slug:', window.location.pathname.split('/')[2]);
+    } else {
+      console.log('❌ NÃO está na rota /m/:slug');
+      console.log('Está em:', window.location.pathname);
+    }
+  </script>
+</head>
+<body>
+  <h1>Debug Routing</h1>
+  <p>Abra o console (F12) para ver os logs</p>
+</body>
+</html>
