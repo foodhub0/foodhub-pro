@@ -28,6 +28,7 @@ const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [restaurantName, setRestaurantName] = useState("FoodHub");
+  const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
 
   useEffect(() => {
     loadRestaurant();
@@ -39,12 +40,13 @@ const Layout = ({ children }: LayoutProps) => {
 
     const { data: restaurant } = await supabase
       .from("restaurants")
-      .select("name")
+      .select("name, logo_url")
       .eq("owner_id", user.id)
       .single();
 
     if (restaurant) {
       setRestaurantName(restaurant.name);
+      setRestaurantLogo(restaurant.logo_url);
     }
   };
 
@@ -78,9 +80,17 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="flex h-16 items-center justify-between px-4 border-b">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Utensils className="w-6 h-6 text-white" />
-              </div>
+              {restaurantLogo ? (
+                <img
+                  src={restaurantLogo}
+                  alt={restaurantName}
+                  className="w-10 h-10 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                  <Utensils className="w-6 h-6 text-white" />
+                </div>
+              )}
               <div className="hidden lg:block">
                 <p className="font-bold text-foreground truncate max-w-[140px]">
                   {restaurantName}

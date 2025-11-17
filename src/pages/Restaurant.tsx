@@ -137,14 +137,18 @@ const Restaurant = () => {
               <div className="space-y-2">
                 <Label htmlFor="slug">URL Personalizada *</Label>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">foodhub.app/</span>
+                  <span className="text-sm text-muted-foreground">{window.location.origin}/m/</span>
                   <Input
                     id="slug"
                     value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
                     required
+                    placeholder="meu-restaurante"
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Seu cardápio público ficará disponível em: {window.location.origin}/m/{formData.slug || "seu-link"}
+                </p>
               </div>
 
               <div className="space-y-2">
