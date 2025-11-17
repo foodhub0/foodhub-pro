@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, FolderOpen } from "lucide-react";
 import Layout from "@/components/Layout";
+import ImageUpload from "@/components/ImageUpload";
 import { cn } from "@/lib/utils";
 
 interface Category {
@@ -201,15 +202,12 @@ const Categories = () => {
                     rows={3}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="image_url">URL da Imagem</Label>
-                  <Input
-                    id="image_url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    placeholder="https://..."
-                  />
-                </div>
+                <ImageUpload
+                  value={formData.image_url}
+                  onChange={(url) => setFormData({ ...formData, image_url: url || "" })}
+                  label="Imagem da Categoria"
+                  folder="categorias"
+                />
                 <div className="flex items-center justify-between">
                   <Label htmlFor="is_active">Categoria ativa</Label>
                   <Switch
