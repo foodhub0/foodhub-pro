@@ -20,6 +20,7 @@ import PublicMenu from "./pages/PublicMenu";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import DiagnosticMenu from "./pages/DiagnosticMenu";
+import Costs from "./pages/Costs";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/tables" element={<Tables />} />
             <Route path="/orders" element={<OrdersKanban />} />
             <Route path="/couriers" element={<Couriers />} />
+            <Route path="/costs" element={<Costs />} />
             <Route path="/m/:slug" element={<PublicMenu />} />
             <Route path="/m/:slug/checkout" element={<Checkout />} />
             <Route path="/m/:slug/order/:orderId" element={<OrderConfirmation />} />

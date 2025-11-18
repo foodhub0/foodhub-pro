@@ -15,6 +15,7 @@ import {
   X,
   Eye,
   Store,
+  Calculator,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,7 @@ const Layout = ({ children }: LayoutProps) => {
     { icon: Utensils, label: "Produtos", path: "/products" },
     { icon: Table2, label: "Mesas", path: "/tables" },
     { icon: ShoppingBag, label: "Pedidos", path: "/orders" },
+    { icon: Calculator, label: "Custos", path: "/costs" },
     { icon: Users, label: "Entregadores", path: "/couriers" },
     { icon: Ticket, label: "Cupons", path: "/coupons" },
     { icon: Eye, label: "Ver Cardápio", path: "/menu-preview" },
