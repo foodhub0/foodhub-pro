@@ -76,7 +76,7 @@ const PublicMenu = () => {
 
   // IntersectionObserver para detectar categoria visível (estilo iFood)
   useEffect(() => {
-    // Não aplicar durante busca ou quando usuário clicou em uma categoria
+    // Não aplicar durante busca ou quando usuário está clicando
     if (searchQuery || isScrollingRef.current || categories.length === 0) return;
 
     // Limpar observer anterior
@@ -87,30 +87,30 @@ const PublicMenu = () => {
     // Configurar IntersectionObserver
     const observerOptions = {
       root: null, // viewport
-      rootMargin: '-120px 0px -50% 0px', // Detecta quando está logo abaixo do header fixo
-      threshold: [0, 0.25, 0.5, 0.75, 1.0],
+      rootMargin: '-150px 0px -40% 0px', // Detecta quando a seção está no topo visível
+      threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5],
     };
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      // Encontrar a seção mais visível
+      // Filtrar apenas seções visíveis
       const visibleEntries = entries.filter(entry => entry.isIntersecting);
 
       if (visibleEntries.length > 0) {
-        // Pegar a seção com maior intersectionRatio (mais visível)
+        // Encontrar a seção mais visível (maior intersectionRatio)
         const mostVisible = visibleEntries.reduce((prev, current) => {
           return current.intersectionRatio > prev.intersectionRatio ? current : prev;
         });
 
         const categoryId = mostVisible.target.getAttribute('data-category-id');
 
-        if (categoryId && categoryId !== activeCategory) {
+        if (categoryId) {
           setActiveCategory(categoryId);
 
-          // Scroll suave da tab para o centro
+          // Scroll suave da tab para o centro (sem smooth para evitar conflitos)
           const tabButton = document.querySelector(`[data-category="${categoryId}"]`);
           if (tabButton && tabsRef.current) {
             tabButton.scrollIntoView({
-              behavior: 'smooth',
+              behavior: 'auto',
               block: 'nearest',
               inline: 'center'
             });
@@ -121,9 +121,8 @@ const PublicMenu = () => {
 
     observerRef.current = new IntersectionObserver(observerCallback, observerOptions);
 
-    // Aguardar um momento para os elementos renderizarem
-    setTimeout(() => {
-      // Observar todas as seções de categoria
+    // Aguardar renderização e observar todas as seções
+    const timeoutId = setTimeout(() => {
       Object.values(categoryRefs.current).forEach(element => {
         if (element) {
           observerRef.current?.observe(element);
@@ -132,11 +131,12 @@ const PublicMenu = () => {
     }, 100);
 
     return () => {
+      clearTimeout(timeoutId);
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
     };
-  }, [categories, searchQuery, products, activeCategory]);
+  }, [categories, searchQuery, products]);
 
   const loadData = async () => {
     const { data: restaurantData } = await supabase
