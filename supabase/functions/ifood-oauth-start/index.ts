@@ -11,8 +11,6 @@ const corsHeaders = {
 
 interface StartOAuthRequest {
   restaurantId: string;
-  clientId: string;
-  clientSecret: string;
 }
 
 // Função para gerar code_verifier e code_challenge (PKCE)
@@ -70,10 +68,18 @@ serve(async (req) => {
     }
 
     // Parse do body
-    const { restaurantId, clientId, clientSecret }: StartOAuthRequest = await req.json();
+    const { restaurantId }: StartOAuthRequest = await req.json();
 
-    if (!restaurantId || !clientId || !clientSecret) {
-      throw new Error('Missing required fields: restaurantId, clientId, clientSecret');
+    if (!restaurantId) {
+      throw new Error('Missing required field: restaurantId');
+    }
+
+    // Usar credenciais centralizadas do FoodHub Pro (variáveis de ambiente)
+    const clientId = Deno.env.get('IFOOD_CLIENT_ID');
+    const clientSecret = Deno.env.get('IFOOD_CLIENT_SECRET');
+
+    if (!clientId || !clientSecret) {
+      throw new Error('iFood credentials not configured. Please contact support.');
     }
 
     // Verificar se o usuário é dono do restaurante
