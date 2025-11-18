@@ -125,7 +125,10 @@ const OrdersKanban = () => {
 
       setRestaurantId(restaurant.id);
 
-      // Buscar pedidos (filtrando is_archived se existir, ou todos se não existir)
+      // Buscar pedidos não cancelados (últimos 30 dias para performance)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
       const { data: ordersData, error } = await supabase
         .from('orders')
         .select(`
@@ -139,7 +142,8 @@ const OrdersKanban = () => {
           )
         `)
         .eq('restaurant_id', restaurant.id)
-        .or('is_archived.is.null,is_archived.eq.false')
+        .neq('status', 'cancelled')
+        .gte('created_at', thirtyDaysAgo.toISOString())
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -180,13 +184,17 @@ const OrdersKanban = () => {
 
   const archiveOldOrders = async () => {
     try {
+      // Tentar arquivar pedidos antigos, mas não falhar se a função não existir
       const { data, error } = await supabase.rpc('archive_old_delivered_orders');
-      if (error) throw error;
+      if (error && !error.message.includes('function')) {
+        console.error('Error archiving old orders:', error);
+      }
       if (data > 0) {
         loadOrders();
       }
     } catch (error) {
-      console.error('Error archiving old orders:', error);
+      // Silenciosamente ignorar se a função não existir
+      console.debug('Archive function not available:', error);
     }
   };
 
