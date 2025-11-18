@@ -60,15 +60,14 @@ const Layout = ({ children }: LayoutProps) => {
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: Store, label: "Meu Restaurante", path: "/restaurant" },
-    { icon: FolderOpen, label: "Categorias", path: "/categories" },
-    { icon: Utensils, label: "Produtos", path: "/products" },
-    { icon: Table2, label: "Mesas", path: "/tables" },
     { icon: ShoppingBag, label: "Pedidos", path: "/orders" },
     { icon: UserCircle, label: "Clientes", path: "/customers" },
+    { icon: Store, label: "Meu Restaurante", path: "/restaurant" },
+    { icon: Utensils, label: "Produtos", path: "/products" },
+    { icon: Table2, label: "Mesas", path: "/tables" },
     { icon: Calculator, label: "Custos", path: "/costs" },
     { icon: Bike, label: "Entregadores", path: "/couriers" },
-    { icon: Eye, label: "Ver Cardápio", path: "/menu-preview" },
+    { icon: Eye, label: "Cardápio", path: "/menu-preview" },
   ];
 
   return (

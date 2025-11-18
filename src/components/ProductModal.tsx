@@ -154,7 +154,7 @@ export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps)
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 gap-0">
         {/* Imagem do Produto - Full Width */}
         {product.image_url && (
-          <div className="relative w-full h-56 bg-gray-100">
+          <div className="relative w-full h-56 bg-muted">
             <img
               src={product.image_url}
               alt={product.name}
@@ -163,7 +163,7 @@ export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps)
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-3 top-3 bg-white/90 hover:bg-white rounded-full shadow-md"
+              className="absolute right-3 top-3 bg-white/90 dark:bg-black/60 hover:bg-white dark:hover:bg-black/80 rounded-full shadow-md"
               onClick={() => onOpenChange(false)}
             >
               <X className="h-4 w-4" />
@@ -193,19 +193,19 @@ export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps)
           {/* Nome e Descrição */}
           <div className="space-y-2">
             {product.image_url && (
-              <h2 className="text-xl font-bold text-gray-900">{product.name}</h2>
+              <h2 className="text-xl font-bold text-foreground">{product.name}</h2>
             )}
 
             {/* Descrição */}
             {product.description && (
-              <p className="text-sm text-gray-600 leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {product.description}
               </p>
             )}
 
             {/* Preço Base */}
             <div className="pt-2">
-              <span className="text-xl font-bold text-gray-900">
+              <span className="text-xl font-bold text-foreground">
                 {formatCurrency(product.base_price)}
               </span>
             </div>
@@ -214,12 +214,12 @@ export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps)
           {/* Variações/Adicionais */}
           {availableVariations.length > 0 && (
             <div className="space-y-3 border-t pt-4">
-              <Label className="text-base font-bold text-gray-900">Adicionais</Label>
+              <Label className="text-base font-bold text-foreground">Adicionais</Label>
               <div className="space-y-2">
                 {availableVariations.map(variation => (
                   <div
                     key={variation.id}
-                    className="flex items-center justify-between space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                    className="flex items-center justify-between space-x-3 p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
                   >
                     <div className="flex items-center space-x-3 flex-1">
                       <Checkbox
@@ -228,7 +228,7 @@ export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps)
                         onCheckedChange={(checked) =>
                           handleVariationToggle(variation, checked as boolean)
                         }
-                        className="data-[state=checked]:bg-[#005BFF] data-[state=checked]:border-[#005BFF]"
+                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       />
                       <label
                         htmlFor={variation.id}
@@ -237,7 +237,7 @@ export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps)
                         {variation.name}
                       </label>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm font-semibold text-foreground">
                       {variation.price_modifier > 0 ? '+' : ''}
                       {formatCurrency(variation.price_modifier)}
                     </span>
@@ -249,7 +249,7 @@ export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps)
 
           {/* Observações */}
           <div className="space-y-2 border-t pt-4">
-            <Label htmlFor="notes" className="text-sm font-semibold text-gray-900">
+            <Label htmlFor="notes" className="text-sm font-semibold text-foreground">
               Alguma observação?
             </Label>
             <Textarea
@@ -258,23 +258,23 @@ export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps)
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="resize-none bg-gray-50 border-0 focus-visible:ring-2 focus-visible:ring-[#005BFF]"
+              className="resize-none bg-muted border-0 focus-visible:ring-2 focus-visible:ring-primary"
             />
           </div>
         </div>
 
         {/* Footer Fixo - Estilo iFood */}
-        <div className="sticky bottom-0 bg-white border-t p-4 space-y-3">
+        <div className="sticky bottom-0 bg-card border-t p-4 space-y-3">
           {/* Quantidade */}
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-900">Quantidade</span>
+            <span className="text-sm font-semibold text-foreground">Quantidade</span>
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => handleQuantityChange(-1)}
                 disabled={quantity <= 1}
-                className="h-9 w-9 rounded-full border-[#005BFF] text-[#005BFF] hover:bg-blue-50 disabled:opacity-50"
+                className="h-9 w-9 rounded-full border-primary text-primary hover:bg-primary/10 disabled:opacity-50"
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -286,7 +286,7 @@ export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps)
                 size="icon"
                 onClick={() => handleQuantityChange(1)}
                 disabled={quantity >= 99}
-                className="h-9 w-9 rounded-full border-[#005BFF] text-[#005BFF] hover:bg-blue-50 disabled:opacity-50"
+                className="h-9 w-9 rounded-full border-primary text-primary hover:bg-primary/10 disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -296,7 +296,7 @@ export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps)
           {/* Botão Adicionar */}
           <Button
             onClick={handleAddToCart}
-            className="w-full h-12 bg-[#005BFF] hover:bg-[#0047CC] text-white font-bold text-base shadow-md"
+            className="w-full h-12 bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-base shadow-md"
             disabled={loading}
           >
             <span className="flex items-center justify-between w-full">

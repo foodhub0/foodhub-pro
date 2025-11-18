@@ -12,6 +12,8 @@ import ImageUpload from "@/components/ImageUpload";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DeliveryZoneConfig, DeliveryZone } from "@/components/DeliveryZoneConfig";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const Restaurant = () => {
   const { toast } = useToast();
@@ -22,6 +24,8 @@ const Restaurant = () => {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [importUrl, setImportUrl] = useState("");
   const [importPlatform, setImportPlatform] = useState<"ifood" | "anotaai" | "instadelivery">("ifood");
+  const [deliveryMode, setDeliveryMode] = useState<"fixed" | "zones">("fixed");
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -64,6 +68,12 @@ const Restaurant = () => {
         delivery_fee: restaurant.delivery_fee?.toString() || "0",
         delivery_time_estimate: restaurant.delivery_time_estimate?.toString() || "30",
       });
+
+      // Carregar zonas de entrega se existir
+      if (restaurant.delivery_zones && Array.isArray(restaurant.delivery_zones)) {
+        setDeliveryZones(restaurant.delivery_zones);
+        setDeliveryMode("zones");
+      }
     }
     setLoading(false);
   };
@@ -73,20 +83,30 @@ const Restaurant = () => {
     if (!restaurantId) return;
 
     setSaving(true);
+    const updateData: any = {
+      name: formData.name,
+      slug: formData.slug,
+      description: formData.description,
+      phone: formData.phone,
+      email: formData.email,
+      address: formData.address,
+      logo_url: formData.logo_url || null,
+      cover_url: formData.cover_url || null,
+      delivery_time_estimate: parseInt(formData.delivery_time_estimate),
+    };
+
+    // Adicionar taxa de entrega com base no modo selecionado
+    if (deliveryMode === "fixed") {
+      updateData.delivery_fee = parseFloat(formData.delivery_fee);
+      updateData.delivery_zones = null;
+    } else {
+      updateData.delivery_fee = null;
+      updateData.delivery_zones = deliveryZones;
+    }
+
     const { error } = await supabase
       .from("restaurants")
-      .update({
-        name: formData.name,
-        slug: formData.slug,
-        description: formData.description,
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address,
-        logo_url: formData.logo_url || null,
-        cover_url: formData.cover_url || null,
-        delivery_fee: parseFloat(formData.delivery_fee),
-        delivery_time_estimate: parseInt(formData.delivery_time_estimate),
-      })
+      .update(updateData)
       .eq("id", restaurantId);
 
     setSaving(false);
@@ -266,11 +286,47 @@ const Restaurant = () => {
           <Card>
             <CardHeader>
               <CardTitle>Configurações de Entrega</CardTitle>
+              <CardDescription>
+                Configure como será calculada a taxa de entrega dos pedidos
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="delivery_fee">Taxa de Entrega (R$)</Label>
+            <CardContent className="space-y-6">
+              {/* Tempo de entrega */}
+              <div className="space-y-2">
+                <Label htmlFor="delivery_time_estimate">Tempo Estimado de Entrega (min)</Label>
+                <Input
+                  id="delivery_time_estimate"
+                  type="number"
+                  min="0"
+                  value={formData.delivery_time_estimate}
+                  onChange={(e) => setFormData({ ...formData, delivery_time_estimate: e.target.value })}
+                  className="max-w-xs"
+                />
+              </div>
+
+              {/* Modo de cálculo da taxa */}
+              <div className="space-y-4">
+                <Label className="text-base">Tipo de Taxa de Entrega</Label>
+                <RadioGroup value={deliveryMode} onValueChange={(value: "fixed" | "zones") => setDeliveryMode(value)}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="fixed" id="fixed" />
+                    <Label htmlFor="fixed" className="font-normal cursor-pointer">
+                      Taxa Fixa - Mesmo valor para todos os pedidos
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="zones" id="zones" />
+                    <Label htmlFor="zones" className="font-normal cursor-pointer">
+                      Taxa por Raio - Valor varia conforme a distância do cliente
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Taxa fixa */}
+              {deliveryMode === "fixed" && (
+                <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
+                  <Label htmlFor="delivery_fee">Valor da Taxa de Entrega (R$)</Label>
                   <Input
                     id="delivery_fee"
                     type="number"
@@ -278,20 +334,24 @@ const Restaurant = () => {
                     min="0"
                     value={formData.delivery_fee}
                     onChange={(e) => setFormData({ ...formData, delivery_fee: e.target.value })}
+                    className="max-w-xs"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Esta taxa será aplicada para todos os pedidos com entrega
+                  </p>
                 </div>
+              )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="delivery_time_estimate">Tempo de Entrega (min)</Label>
-                  <Input
-                    id="delivery_time_estimate"
-                    type="number"
-                    min="0"
-                    value={formData.delivery_time_estimate}
-                    onChange={(e) => setFormData({ ...formData, delivery_time_estimate: e.target.value })}
+              {/* Taxa por zonas */}
+              {deliveryMode === "zones" && (
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <DeliveryZoneConfig
+                    zones={deliveryZones}
+                    onChange={setDeliveryZones}
+                    restaurantAddress={formData.address}
                   />
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
