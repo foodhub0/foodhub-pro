@@ -328,16 +328,27 @@ const IngredientsModule = () => {
                           onValueChange={(value) => setFormData({ ...formData, category_id: value })}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma categoria" />
+                            <SelectValue placeholder={categories.length === 0 ? "Nenhuma categoria criada" : "Selecione uma categoria"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>
-                                {cat.name}
-                              </SelectItem>
-                            ))}
+                            {categories.length === 0 ? (
+                              <div className="p-2 text-sm text-muted-foreground text-center">
+                                Nenhuma categoria disponível
+                              </div>
+                            ) : (
+                              categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  {cat.name}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
+                        {categories.length === 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Categorias serão criadas automaticamente no primeiro uso.
+                          </p>
+                        )}
                       </div>
                     </div>
 

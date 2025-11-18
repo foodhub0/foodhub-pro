@@ -125,7 +125,7 @@ const OrdersKanban = () => {
 
       setRestaurantId(restaurant.id);
 
-      // Buscar pedidos não arquivados
+      // Buscar pedidos (filtrando is_archived se existir, ou todos se não existir)
       const { data: ordersData, error } = await supabase
         .from('orders')
         .select(`
@@ -139,7 +139,7 @@ const OrdersKanban = () => {
           )
         `)
         .eq('restaurant_id', restaurant.id)
-        .eq('is_archived', false)
+        .or('is_archived.is.null,is_archived.eq.false')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
