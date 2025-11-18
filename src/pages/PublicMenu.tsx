@@ -444,14 +444,14 @@ const PublicMenu = () => {
         {featuredProducts.length > 0 && !searchQuery && !selectedCategory && (
           <div className="mb-8">
             <h2 className="text-xl font-bold text-foreground mb-4">DESTAQUES</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
               {featuredProducts.map((product) => (
                 <div
                   key={product.id}
                   onClick={() => handleProductClick(product)}
                   className="cursor-pointer group"
                 >
-                  <div className="relative aspect-square rounded-2xl overflow-hidden mb-3 bg-gray-200">
+                  <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 bg-gray-200">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
@@ -460,14 +460,14 @@ const PublicMenu = () => {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-                        <span className="text-4xl text-gray-400">🍕</span>
+                        <span className="text-2xl sm:text-4xl text-gray-400">🍕</span>
                       </div>
                     )}
                   </div>
-                  <p className="font-semibold text-foreground mb-1">
+                  <p className="font-semibold text-foreground mb-1 text-xs sm:text-base">
                     {formatCurrency(product.price || product.base_price)}
                   </p>
-                  <p className="text-sm text-muted-foreground line-clamp-1">{product.name}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">{product.name}</p>
                 </div>
               ))}
             </div>
