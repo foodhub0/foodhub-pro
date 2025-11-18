@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Search, Star, Clock, ArrowLeft, ShoppingCart, Plus, Menu as MenuIcon, Bike, DollarSign, Share2, Copy, ExternalLink } from "lucide-react";
+import { Search, Star, Clock, ArrowLeft, ShoppingCart, Plus, Menu as MenuIcon, Bike, DollarSign, Share2, Copy, ExternalLink, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,7 @@ interface Restaurant {
   phone: string | null;
   address: string | null;
   delivery_time_estimate: number | null;
+  pickup_time_estimate: number | null;
   delivery_fee: number | null;
   is_open: boolean;
 }
@@ -335,11 +336,24 @@ const MenuPreview = () => {
                   <DollarSign className="h-4 w-4" />
                   <span>Padrão</span>
                 </div>
-                <span>•</span>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>{restaurant.delivery_time_estimate || "30-40"} min</span>
-                </div>
+                {restaurant.delivery_time_estimate && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <Bike className="h-4 w-4" />
+                      <span>{restaurant.delivery_time_estimate} min entrega</span>
+                    </div>
+                  </>
+                )}
+                {restaurant.pickup_time_estimate && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{restaurant.pickup_time_estimate} min retirada</span>
+                    </div>
+                  </>
+                )}
                 {restaurant.delivery_fee !== null && (
                   <>
                     <span>•</span>
@@ -358,6 +372,21 @@ const MenuPreview = () => {
           </div>
         </div>
       </div>
+
+      {/* Aviso de Loja Fechada (Preview) */}
+      {!restaurant.is_open && (
+        <div className="px-4 py-3 bg-amber-100 border-y border-amber-200">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center gap-2 text-amber-800">
+              <Store className="h-5 w-5" />
+              <div>
+                <p className="font-semibold">⚠️ Loja configurada como FECHADA</p>
+                <p className="text-sm">Clientes não poderão fazer pedidos. Altere o status na sidebar.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Barra de Busca e Navegação Fixa */}
       <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
