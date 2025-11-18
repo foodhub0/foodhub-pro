@@ -21,6 +21,7 @@ import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import DiagnosticMenu from "./pages/DiagnosticMenu";
 import Costs from "./pages/Costs";
+import Customers from "./pages/Customers";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/orders" element={<OrdersKanban />} />
             <Route path="/couriers" element={<Couriers />} />
             <Route path="/costs" element={<Costs />} />
+            <Route path="/customers" element={<Customers />} />
             <Route path="/m/:slug" element={<PublicMenu />} />
             <Route path="/m/:slug/checkout" element={<Checkout />} />
             <Route path="/m/:slug/order/:orderId" element={<OrderConfirmation />} />
