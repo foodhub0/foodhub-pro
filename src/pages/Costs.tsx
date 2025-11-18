@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Calculator,
   Package,
@@ -12,6 +11,7 @@ import {
   DollarSign,
   TrendingUp,
 } from "lucide-react";
+import Layout from "@/components/Layout";
 import IngredientsModule from "@/components/costs/IngredientsModule";
 import SizesModule from "@/components/costs/SizesModule";
 import RecipesModule from "@/components/costs/RecipesModule";
@@ -26,7 +26,8 @@ const Costs = () => {
   const [activeTab, setActiveTab] = useState("ingredients");
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-7xl">
+    <Layout>
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Central de Custos</h1>
         <p className="text-muted-foreground">
@@ -120,7 +121,8 @@ const Costs = () => {
           </TabsContent>
         </div>
       </Tabs>
-    </div>
+      </div>
+    </Layout>
   );
 };
 
