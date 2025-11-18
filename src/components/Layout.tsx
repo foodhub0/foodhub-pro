@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import AIChat from "@/components/AIChat";
+import StoreStatusControl from "@/components/StoreStatusControl";
 
 interface LayoutProps {
   children: ReactNode;
@@ -32,6 +33,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [restaurantName, setRestaurantName] = useState("FoodHub");
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
   useEffect(() => {
     loadRestaurant();
@@ -43,11 +45,12 @@ const Layout = ({ children }: LayoutProps) => {
 
     const { data: restaurant } = await supabase
       .from("restaurants")
-      .select("name, logo_url")
+      .select("id, name, logo_url")
       .eq("owner_id", user.id)
       .single();
 
     if (restaurant) {
+      setRestaurantId(restaurant.id);
       setRestaurantName(restaurant.name);
       setRestaurantLogo(restaurant.logo_url);
     }
@@ -111,6 +114,9 @@ const Layout = ({ children }: LayoutProps) => {
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
+
+        {/* Controle de Status da Loja */}
+        <StoreStatusControl restaurantId={restaurantId} sidebarOpen={sidebarOpen} />
 
         {/* Menu */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
