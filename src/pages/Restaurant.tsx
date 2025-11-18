@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Moon, Sun, Download, ExternalLink } from "lucide-react";
+import { Loader2, Moon, Sun } from "lucide-react";
 import Layout from "@/components/Layout";
 import ImageUpload from "@/components/ImageUpload";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -20,10 +20,7 @@ const Restaurant = () => {
   const { theme, toggleTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
-  const [importUrl, setImportUrl] = useState("");
-  const [importPlatform, setImportPlatform] = useState<"ifood" | "anotaai" | "instadelivery">("ifood");
   const [deliveryMode, setDeliveryMode] = useState<"fixed" | "zones">("fixed");
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
   const [formData, setFormData] = useState({
@@ -122,47 +119,6 @@ const Restaurant = () => {
         title: "Restaurante atualizado!",
         description: "As informações foram salvas com sucesso.",
       });
-    }
-  };
-
-  const handleImportMenu = async () => {
-    if (!importUrl.trim()) {
-      toast({
-        title: "URL necessária",
-        description: "Por favor, insira o link da sua loja na plataforma",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!restaurantId) return;
-
-    setImporting(true);
-
-    try {
-      // Nota: Esta é uma implementação demonstrativa
-      // As APIs públicas dessas plataformas não estão disponíveis sem credenciais
-      toast({
-        title: "Funcionalidade em desenvolvimento",
-        description: `A importação direta de cardápios do ${importPlatform.toUpperCase()} requer integração com suas APIs oficiais. Entre em contato com o suporte para configurar esta funcionalidade.`,
-        variant: "default",
-      });
-
-      // TODO: Implementar integração com APIs quando credenciais estiverem disponíveis
-      // Exemplo de fluxo:
-      // 1. Validar URL e extrair ID da loja
-      // 2. Fazer requisição para API da plataforma (requer autenticação)
-      // 3. Processar resposta e importar categorias e produtos
-      // 4. Salvar no banco de dados
-
-    } catch (error: any) {
-      toast({
-        title: "Erro ao importar",
-        description: error.message || "Tente novamente",
-        variant: "destructive",
-      });
-    } finally {
-      setImporting(false);
     }
   };
 
@@ -352,112 +308,6 @@ const Restaurant = () => {
                   />
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Importar Cardápio</CardTitle>
-              <CardDescription>
-                Importe seu cardápio diretamente de plataformas de delivery
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Tabs value={importPlatform} onValueChange={(value) => setImportPlatform(value as any)}>
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="ifood">iFood</TabsTrigger>
-                  <TabsTrigger value="anotaai">Anota AI</TabsTrigger>
-                  <TabsTrigger value="instadelivery">InstaDelivery</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="ifood" className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="ifood-url">Link da sua loja no iFood</Label>
-                    <Input
-                      id="ifood-url"
-                      placeholder="https://www.ifood.com.br/delivery/..."
-                      value={importUrl}
-                      onChange={(e) => setImportUrl(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Cole o link público da sua loja no iFood
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleImportMenu}
-                    disabled={importing}
-                    className="w-full"
-                  >
-                    {importing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Download className="mr-2 h-4 w-4" />
-                    Importar do iFood
-                  </Button>
-                </TabsContent>
-
-                <TabsContent value="anotaai" className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="anotaai-url">Link da sua loja no Anota AI</Label>
-                    <Input
-                      id="anotaai-url"
-                      placeholder="https://anotaai.com/..."
-                      value={importUrl}
-                      onChange={(e) => setImportUrl(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Cole o link público da sua loja no Anota AI
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleImportMenu}
-                    disabled={importing}
-                    className="w-full"
-                  >
-                    {importing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Download className="mr-2 h-4 w-4" />
-                    Importar do Anota AI
-                  </Button>
-                </TabsContent>
-
-                <TabsContent value="instadelivery" className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="instadelivery-url">Link da sua loja no InstaDelivery</Label>
-                    <Input
-                      id="instadelivery-url"
-                      placeholder="https://instadelivery.com.br/..."
-                      value={importUrl}
-                      onChange={(e) => setImportUrl(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Cole o link público da sua loja no InstaDelivery
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleImportMenu}
-                    disabled={importing}
-                    className="w-full"
-                  >
-                    {importing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Download className="mr-2 h-4 w-4" />
-                    Importar do InstaDelivery
-                  </Button>
-                </TabsContent>
-              </Tabs>
-
-              <div className="bg-muted p-4 rounded-lg space-y-2">
-                <p className="text-sm font-semibold">Como funciona:</p>
-                <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Cole o link público da sua loja na plataforma</li>
-                  <li>Clique em "Importar"</li>
-                  <li>Aguarde enquanto importamos seus produtos e categorias</li>
-                  <li>Revise e ajuste conforme necessário</li>
-                </ol>
-                <p className="text-xs text-muted-foreground mt-2">
-                  <strong>Nota:</strong> A importação requer credenciais de API das plataformas. Entre em contato com o suporte para configurar esta integração.
-                </p>
-              </div>
             </CardContent>
           </Card>
 
