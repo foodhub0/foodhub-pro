@@ -5,6 +5,8 @@ import { FilterTags, CustomerFilter } from '@/components/customers/FilterTags';
 import { CustomerTable, Customer } from '@/components/customers/CustomerTable';
 import { ImportCustomersModal } from '@/components/customers/ImportCustomersModal';
 import { NewCustomerModal, NewCustomerData } from '@/components/customers/NewCustomerModal';
+import { EditCustomerModal, EditCustomerData } from '@/components/customers/EditCustomerModal';
+import { CustomerOrdersModal } from '@/components/customers/CustomerOrdersModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -56,6 +58,9 @@ const Customers = () => {
   const [period, setPeriod] = useState('month');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   // Carregar clientes do banco de dados
   useEffect(() => {
@@ -243,12 +248,37 @@ const Customers = () => {
   };
 
   const handleEdit = async (customer: Customer) => {
-    // Por enquanto, mostrar mensagem de em desenvolvimento
-    // TODO: Implementar modal de edição
-    toast({
-      title: 'Editar cliente',
-      description: `Edição de ${customer.name} (Em desenvolvimento)`,
-    });
+    setSelectedCustomer(customer);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateCustomer = async (customerId: string, data: EditCustomerData) => {
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .update({
+          name: data.name,
+          email: data.email || null,
+          phone: data.phone.replace(/\D/g, ''),
+          address: data.address || null,
+          city: data.city || null,
+          zipcode: data.zipCode?.replace(/\D/g, '') || null,
+        })
+        .eq('id', customerId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Cliente atualizado!',
+        description: 'Os dados do cliente foram atualizados com sucesso',
+      });
+
+      // Recarregar a lista de clientes
+      loadCustomers();
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      throw error;
+    }
   };
 
   const handleDelete = async (customer: Customer) => {
@@ -283,10 +313,8 @@ const Customers = () => {
   };
 
   const handleViewOrders = (customer: Customer) => {
-    toast({
-      title: 'Ver pedidos',
-      description: `Visualizando pedidos de ${customer.name} (Em desenvolvimento)`,
-    });
+    setSelectedCustomer(customer);
+    setIsOrdersModalOpen(true);
   };
 
   if (loading) {
@@ -450,6 +478,19 @@ const Customers = () => {
           open={isNewCustomerModalOpen}
           onOpenChange={setIsNewCustomerModalOpen}
           onSave={handleNewCustomer}
+        />
+
+        <EditCustomerModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSave={handleUpdateCustomer}
+          customer={selectedCustomer}
+        />
+
+        <CustomerOrdersModal
+          open={isOrdersModalOpen}
+          onOpenChange={setIsOrdersModalOpen}
+          customer={selectedCustomer}
         />
       </div>
     </Layout>
