@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 interface Order {
   id: string;
-  order_number: string;
+  order_number: string | null;
   order_type: "delivery" | "table" | "takeout";
   status: string;
   total_amount: number;
@@ -150,7 +150,7 @@ const Orders = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle className="text-lg">
-                        Pedido #{order.order_number}
+                        Pedido #{order.order_number || order.id.slice(0, 8)}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground mt-1">
                         {order.customer_name || "Cliente não identificado"}
