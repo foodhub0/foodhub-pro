@@ -84,29 +84,23 @@ const PublicMenu = () => {
       observerRef.current.disconnect();
     }
 
-    // Configurar IntersectionObserver
+    // Configurar IntersectionObserver - detecta exatamente quando o título cruza o header
     const observerOptions = {
       root: null, // viewport
-      rootMargin: '-150px 0px -40% 0px', // Detecta quando a seção está no topo visível
-      threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+      rootMargin: '-170px 0px -70% 0px', // Linha logo abaixo do header fixo
+      threshold: 0, // Detecção instantânea ao cruzar
     };
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      // Filtrar apenas seções visíveis
-      const visibleEntries = entries.filter(entry => entry.isIntersecting);
+      // Processar cada entrada
+      entries.forEach(entry => {
+        const categoryId = entry.target.getAttribute('data-category-id');
 
-      if (visibleEntries.length > 0) {
-        // Encontrar a seção mais visível (maior intersectionRatio)
-        const mostVisible = visibleEntries.reduce((prev, current) => {
-          return current.intersectionRatio > prev.intersectionRatio ? current : prev;
-        });
-
-        const categoryId = mostVisible.target.getAttribute('data-category-id');
-
-        if (categoryId) {
+        if (entry.isIntersecting && categoryId) {
+          // Quando a seção entra na zona de detecção, ativa no header
           setActiveCategory(categoryId);
 
-          // Scroll suave da tab para o centro (sem smooth para evitar conflitos)
+          // Centraliza a tab no header
           const tabButton = document.querySelector(`[data-category="${categoryId}"]`);
           if (tabButton && tabsRef.current) {
             tabButton.scrollIntoView({
@@ -116,7 +110,7 @@ const PublicMenu = () => {
             });
           }
         }
-      }
+      });
     };
 
     observerRef.current = new IntersectionObserver(observerCallback, observerOptions);
