@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import AIChat from "@/components/AIChat";
 
 interface LayoutProps {
   children: ReactNode;
@@ -189,6 +190,9 @@ const Layout = ({ children }: LayoutProps) => {
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
+      {/* AI Chat Flutuante */}
+      <AIChat />
     </div>
   );
 };
