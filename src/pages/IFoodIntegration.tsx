@@ -126,34 +126,78 @@ export default function IFoodIntegration() {
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      if (!session) {
+        throw new Error('Você precisa estar autenticado. Por favor, faça login novamente.');
+      }
+
+      // Validar que temos restaurantId
+      if (!restaurantId) {
+        throw new Error('Restaurante não encontrado. Por favor, recarregue a página.');
+      }
+
+      console.log('Iniciando conexão com iFood...', {
+        restaurantId,
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+      });
 
       // Chamar Edge Function que retorna URL de autorização
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ifood-oauth-start`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            restaurantId,
-          }),
-        }
-      );
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ifood-oauth-start`;
+      console.log('Calling Edge Function:', url);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          restaurantId,
+        }),
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(
+          `Erro na comunicação com o servidor (${response.status}). ` +
+          `Por favor, verifique se as credenciais do iFood estão configuradas no Supabase.`
+        );
+      }
 
       const result = await response.json();
+      console.log('Result:', result);
 
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error(result.error || 'Erro desconhecido ao iniciar integração');
       }
+
+      if (!result.data?.authorizationUrl) {
+        throw new Error('URL de autorização não foi retornada pelo servidor');
+      }
+
+      console.log('Redirecting to:', result.data.authorizationUrl);
 
       // Redirecionar para URL de autorização do iFood
       window.location.href = result.data.authorizationUrl;
     } catch (error: any) {
       console.error('Error connecting to iFood:', error);
-      toast.error(error.message || 'Erro ao conectar com iFood');
+
+      let errorMessage = 'Erro ao conectar com iFood';
+
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Não foi possível conectar ao servidor. Verifique:\n' +
+          '1. Se as Edge Functions foram deployed\n' +
+          '2. Se as variáveis IFOOD_CLIENT_ID e IFOOD_CLIENT_SECRET estão configuradas\n' +
+          '3. Se a URL do Supabase está correta';
+      } else {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage, {
+        duration: 10000,
+      });
       setLoading(false);
     }
   };
