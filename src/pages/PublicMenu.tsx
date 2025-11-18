@@ -262,9 +262,9 @@ const PublicMenu = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header com Banner */}
-      <div className="relative h-64 bg-gradient-to-b from-gray-900 to-gray-800">
+      <div className="relative h-64 bg-gradient-to-b from-gray-900 to-gray-800 dark:from-gray-950 dark:to-gray-900">
         {restaurant.cover_url && (
           <img
             src={restaurant.cover_url}
@@ -293,10 +293,10 @@ const PublicMenu = () => {
 
       {/* Card de Informações Flutuante */}
       <div className="relative -mt-20 px-4 pb-4">
-        <div className="bg-white rounded-3xl shadow-lg p-6 max-w-2xl mx-auto">
+        <div className="bg-card rounded-3xl shadow-lg p-6 max-w-2xl mx-auto">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl font-bold text-foreground mb-2">
                 {restaurant.name}
               </h1>
 
@@ -305,8 +305,8 @@ const PublicMenu = () => {
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-semibold text-gray-900">{rating.toFixed(1)}</span>
-                    <span className="text-sm text-gray-500">
+                    <span className="font-semibold text-foreground">{rating.toFixed(1)}</span>
+                    <span className="text-sm text-muted-foreground">
                       ({totalRatings} {totalRatings === 1 ? 'avaliação' : 'avaliações'})
                     </span>
                   </div>
@@ -314,7 +314,7 @@ const PublicMenu = () => {
               )}
 
               {/* Info */}
-              <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1">
                   <DollarSign className="h-4 w-4" />
                   <span>Padrão</span>
@@ -344,7 +344,7 @@ const PublicMenu = () => {
       </div>
 
       {/* Barra de Busca e Navegação Fixa */}
-      <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
+      <div className="sticky top-0 z-40 bg-card border-b shadow-sm">
         <div className="px-4 py-3">
           <div className="flex items-center gap-3 max-w-2xl mx-auto">
             <Button
@@ -357,13 +357,13 @@ const PublicMenu = () => {
             </Button>
 
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder={`Buscar em ${restaurant.name}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-gray-100 border-0 rounded-full"
+                className="pl-10 bg-muted border-0 rounded-full"
               />
             </div>
 
@@ -378,7 +378,7 @@ const PublicMenu = () => {
         </div>
 
         {/* Tabs de Categorias - Sticky com Scroll Sincronizado */}
-        <div className="overflow-x-auto scrollbar-hide border-t bg-white" ref={tabsRef}>
+        <div className="overflow-x-auto scrollbar-hide border-t bg-card" ref={tabsRef}>
           <div className="flex gap-1 px-4 min-w-max">
             <Button
               variant="ghost"
@@ -386,8 +386,8 @@ const PublicMenu = () => {
               className={cn(
                 "rounded-none border-b-2 px-4 py-3 font-medium transition-all duration-200 whitespace-nowrap",
                 !selectedCategory && !activeCategory
-                  ? "border-[#007BFF] text-[#007BFF] bg-[#E8F1FF]/30"
-                  : "border-transparent text-gray-600 hover:text-[#007BFF] hover:bg-[#E8F1FF]/20"
+                  ? "border-primary text-primary bg-primary/10"
+                  : "border-transparent text-muted-foreground hover:text-primary hover:bg-primary/5"
               )}
               onClick={() => handleCategoryClick(null)}
             >
@@ -407,8 +407,8 @@ const PublicMenu = () => {
                   className={cn(
                     "rounded-none border-b-2 px-4 py-3 font-medium transition-all duration-200 whitespace-nowrap",
                     isActive
-                      ? "border-[#007BFF] text-[#007BFF] bg-[#E8F1FF]/30 font-semibold"
-                      : "border-transparent text-gray-600 hover:text-[#007BFF] hover:bg-[#E8F1FF]/20"
+                      ? "border-primary text-primary bg-primary/10 font-semibold"
+                      : "border-transparent text-muted-foreground hover:text-primary hover:bg-primary/5"
                   )}
                   onClick={() => handleCategoryClick(category.id)}
                 >
@@ -425,7 +425,7 @@ const PublicMenu = () => {
         {/* Seção Destaques */}
         {featuredProducts.length > 0 && !searchQuery && !selectedCategory && (
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">DESTAQUES</h2>
+            <h2 className="text-xl font-bold text-foreground mb-4">DESTAQUES</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {featuredProducts.map((product) => (
                 <div
@@ -446,10 +446,10 @@ const PublicMenu = () => {
                       </div>
                     )}
                   </div>
-                  <p className="font-semibold text-gray-900 mb-1">
+                  <p className="font-semibold text-foreground mb-1">
                     {formatCurrency(product.price || product.base_price)}
                   </p>
-                  <p className="text-sm text-gray-600 line-clamp-1">{product.name}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-1">{product.name}</p>
                 </div>
               ))}
             </div>
@@ -472,7 +472,7 @@ const PublicMenu = () => {
               className="mb-8 scroll-mt-52"
               ref={(el) => { categoryRefs.current[category.id] = el; }}
             >
-              <h2 className="text-lg font-bold text-gray-900 mb-4 uppercase sticky top-[168px] bg-gray-50 py-2 -mx-4 px-4 z-10">
+              <h2 className="text-lg font-bold text-foreground mb-4 uppercase sticky top-[168px] bg-background py-2 -mx-4 px-4 z-10">
                 {category.name}
               </h2>
               <div className="space-y-4">
@@ -480,28 +480,28 @@ const PublicMenu = () => {
                   <div
                     key={product.id}
                     onClick={() => handleProductClick(product)}
-                    className="flex items-center gap-4 bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    className="flex items-center gap-4 bg-card rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                   >
                     <div className="flex-1 min-w-0">
                       {index === 0 && (
-                        <Badge className="mb-2 bg-purple-100 text-purple-700 hover:bg-purple-100">
+                        <Badge className="mb-2 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 hover:bg-purple-100">
                           O mais pedido!
                         </Badge>
                       )}
-                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
+                      <h3 className="font-semibold text-foreground mb-1 line-clamp-2">
                         {product.name}
                       </h3>
                       {product.description && (
-                        <p className="text-sm text-gray-500 mb-2 line-clamp-2">
+                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
                           {product.description}
                         </p>
                       )}
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-foreground">
                         a partir de {formatCurrency(product.price || product.base_price)}
                       </p>
                     </div>
 
-                    <div className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden bg-gray-200">
+                    <div className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden bg-muted">
                       {product.image_url ? (
                         <img
                           src={product.image_url}
@@ -534,7 +534,7 @@ const PublicMenu = () => {
         {/* Produtos sem categoria */}
         {filteredProducts.filter(p => !p.category_id).length > 0 && (
           <div className="mb-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-4 uppercase">
+            <h2 className="text-lg font-bold text-foreground mb-4 uppercase">
               Outros Produtos
             </h2>
             <div className="space-y-4">
@@ -542,23 +542,23 @@ const PublicMenu = () => {
                 <div
                   key={product.id}
                   onClick={() => handleProductClick(product)}
-                  className="flex items-center gap-4 bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  className="flex items-center gap-4 bg-card rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 mb-1">
+                    <h3 className="font-semibold text-foreground mb-1">
                       {product.name}
                     </h3>
                     {product.description && (
-                      <p className="text-sm text-gray-500 mb-2 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
                         {product.description}
                       </p>
                     )}
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-foreground">
                       {formatCurrency(product.price || product.base_price)}
                     </p>
                   </div>
 
-                  <div className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden bg-gray-200">
+                  <div className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden bg-muted">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
@@ -589,7 +589,7 @@ const PublicMenu = () => {
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">Nenhum produto encontrado</p>
+            <p className="text-muted-foreground">Nenhum produto encontrado</p>
           </div>
         )}
       </div>

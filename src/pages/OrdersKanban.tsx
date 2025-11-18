@@ -280,8 +280,8 @@ const OrdersKanban = () => {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Pedidos em Andamento</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <h1 className="text-2xl font-bold text-foreground">Pedidos em Andamento</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Gerencie todos os pedidos do seu restaurante
             </p>
           </div>
@@ -297,7 +297,7 @@ const OrdersKanban = () => {
         </div>
 
       {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {ORDER_STATUSES.map((statusConfig) => {
           const statusOrders = getOrdersByStatus(statusConfig.id);
           const Icon = statusConfig.icon;
@@ -322,13 +322,13 @@ const OrdersKanban = () => {
 
               {/* Column Content */}
               <ScrollArea
-                className="flex-1 min-h-[600px] bg-gray-100 rounded-b-lg border-2 border-t-0 border-gray-200 p-2"
+                className="flex-1 min-h-[400px] md:min-h-[600px] bg-muted rounded-b-lg border-2 border-t-0 border-border p-2"
                 onDragOver={handleDragOver}
                 onDrop={() => handleDrop(statusConfig.id)}
               >
                 <div className="space-y-3">
                   {statusOrders.length === 0 ? (
-                    <div className="text-center py-8 text-gray-400 text-sm">
+                    <div className="text-center py-8 text-muted-foreground text-sm">
                       Nenhum pedido
                     </div>
                   ) : (
@@ -389,12 +389,12 @@ const OrderCard = ({
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <User className="h-4 w-4 text-gray-500" />
-            <span className="font-semibold text-sm text-gray-900">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span className="font-semibold text-sm text-foreground">
               {order.customer_name}
             </span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Phone className="h-3 w-3" />
             <span>{order.customer_phone}</span>
           </div>
@@ -402,19 +402,19 @@ const OrderCard = ({
         <div className="text-right">
           <div className={cn(
             'text-xs font-medium px-2 py-1 rounded-full',
-            isUrgent ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+            isUrgent ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-muted text-muted-foreground'
           )}>
             {timeElapsed}
           </div>
-          <div className="text-xs text-gray-500 mt-1">{formatTime(order.created_at)}</div>
+          <div className="text-xs text-muted-foreground mt-1">{formatTime(order.created_at)}</div>
         </div>
       </div>
 
       {/* Endereço (se for delivery) */}
       {order.order_type === 'delivery' && order.delivery_address && (
-        <div className="flex items-start gap-2 mb-3 p-2 bg-blue-50 rounded-md">
-          <MapPin className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-          <span className="text-xs text-blue-900">
+        <div className="flex items-start gap-2 mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+          <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <span className="text-xs text-blue-900 dark:text-blue-300">
             {order.delivery_address}, {order.delivery_number}
             {order.delivery_neighborhood && ` - ${order.delivery_neighborhood}`}
           </span>
@@ -431,17 +431,17 @@ const OrderCard = ({
       {/* Itens */}
       {order.items && order.items.length > 0 && (
         <div className="mb-3 space-y-1">
-          <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
             <ShoppingBag className="h-3 w-3" />
             <span>{order.items.length} {order.items.length === 1 ? 'item' : 'itens'}</span>
           </div>
           {order.items.slice(0, 2).map((item) => (
-            <div key={item.id} className="text-xs text-gray-700">
+            <div key={item.id} className="text-xs text-foreground">
               {item.quantity}x {item.product_name}
             </div>
           ))}
           {order.items.length > 2 && (
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-muted-foreground">
               +{order.items.length - 2} {order.items.length - 2 === 1 ? 'outro' : 'outros'}
             </div>
           )}
@@ -450,8 +450,8 @@ const OrderCard = ({
 
       {/* Total */}
       <div className="pt-3 border-t flex items-center justify-between">
-        <span className="text-xs text-gray-500">Total</span>
-        <span className="text-base font-bold text-[#005BFF]">
+        <span className="text-xs text-muted-foreground">Total</span>
+        <span className="text-base font-bold text-primary">
           {formatCurrency(order.total)}
         </span>
       </div>
