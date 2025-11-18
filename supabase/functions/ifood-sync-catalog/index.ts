@@ -93,6 +93,18 @@ serve(async (req) => {
     }
 
     try {
+      // Buscar o registro do merchant na tabela
+      const { data: merchantRecord, error: merchantError } = await supabaseClient
+        .from('ifood_merchants')
+        .select('id')
+        .eq('restaurant_id', restaurantId)
+        .eq('merchant_id', merchantId)
+        .single();
+
+      if (merchantError || !merchantRecord) {
+        throw new Error('Merchant not found in database. Please configure it first.');
+      }
+
       // Buscar itens do cardápio do iFood
       const catalogResponse = await fetch(
         `https://merchant-api.ifood.com.br/catalog/v1.0/merchants/${merchantId}/catalogs/DEFAULT/sellableItems`,
@@ -195,7 +207,7 @@ serve(async (req) => {
                     restaurant_id: restaurantId,
                     local_product_id: newProduct.id,
                     ifood_product_id: item.id,
-                    ifood_merchant_id: merchantId,
+                    ifood_merchant_table_id: merchantRecord.id,
                     last_synced_at: new Date().toISOString(),
                   });
 

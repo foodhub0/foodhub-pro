@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS public.ifood_product_mappings (
 
   -- iFood product
   ifood_product_id TEXT NOT NULL,
-  ifood_merchant_id UUID NOT NULL REFERENCES public.ifood_merchants(merchant_id),
+  ifood_merchant_table_id UUID REFERENCES public.ifood_merchants(id) ON DELETE CASCADE,
 
   -- Sync settings
   auto_sync BOOLEAN DEFAULT true,
@@ -290,3 +290,4 @@ COMMENT ON TABLE public.ifood_integrations IS 'Armazena tokens OAuth e configura
 COMMENT ON TABLE public.ifood_merchants IS 'Armazena merchants do iFood vinculados aos restaurantes';
 COMMENT ON TABLE public.ifood_sync_logs IS 'Logs de sincronização de dados com o iFood';
 COMMENT ON TABLE public.ifood_product_mappings IS 'Mapeamento entre produtos locais e produtos do iFood';
+COMMENT ON COLUMN public.ifood_product_mappings.ifood_merchant_table_id IS 'Referência ao ID da tabela ifood_merchants (não confundir com merchant_id do iFood)';

@@ -251,7 +251,8 @@ ifood_sync_logs:
 
 ifood_product_mappings:
   - local_product_id (FK to products)
-  - ifood_product_id
+  - ifood_product_id (ID do produto no iFood)
+  - ifood_merchant_table_id (FK to ifood_merchants.id)
   - auto_sync, sync_price, sync_availability
 ```
 
