@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Store, Clock, Bike } from "lucide-react";
+import { Store, Clock, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StoreStatusControlProps {
@@ -58,7 +58,7 @@ const StoreStatusControl = ({ restaurantId, sidebarOpen }: StoreStatusControlPro
 
     if (error) {
       toast({
-        title: "Erro ao atualizar status",
+        title: "Erro",
         description: error.message,
         variant: "destructive",
       });
@@ -68,10 +68,10 @@ const StoreStatusControl = ({ restaurantId, sidebarOpen }: StoreStatusControlPro
 
     setIsOpen(newIsOpen);
     toast({
-      title: newIsOpen ? "🟢 Loja Aberta!" : "🔴 Loja Fechada",
+      title: newIsOpen ? "Loja aberta" : "Loja fechada",
       description: newIsOpen
-        ? "Seu cardápio está disponível para pedidos"
-        : "Novos pedidos estão bloqueados",
+        ? "Cardápio disponível para pedidos"
+        : "Pedidos bloqueados",
     });
     setLoading(false);
   };
@@ -87,7 +87,7 @@ const StoreStatusControl = ({ restaurantId, sidebarOpen }: StoreStatusControlPro
 
     if (error) {
       toast({
-        title: "Erro ao atualizar prazo",
+        title: "Erro",
         description: error.message,
         variant: "destructive",
       });
@@ -97,8 +97,8 @@ const StoreStatusControl = ({ restaurantId, sidebarOpen }: StoreStatusControlPro
 
     setDeliveryTime(minutes);
     toast({
-      title: "✓ Prazo de entrega atualizado",
-      description: `Agora é ${minutes} minutos`,
+      title: "Atualizado",
+      description: `Prazo de entrega: ${minutes} min`,
     });
     setLoading(false);
   };
@@ -114,7 +114,7 @@ const StoreStatusControl = ({ restaurantId, sidebarOpen }: StoreStatusControlPro
 
     if (error) {
       toast({
-        title: "Erro ao atualizar prazo",
+        title: "Erro",
         description: error.message,
         variant: "destructive",
       });
@@ -124,8 +124,8 @@ const StoreStatusControl = ({ restaurantId, sidebarOpen }: StoreStatusControlPro
 
     setPickupTime(minutes);
     toast({
-      title: "✓ Prazo de retirada atualizado",
-      description: `Agora é ${minutes} minutos`,
+      title: "Atualizado",
+      description: `Prazo de retirada: ${minutes} min`,
     });
     setLoading(false);
   };
@@ -135,151 +135,99 @@ const StoreStatusControl = ({ restaurantId, sidebarOpen }: StoreStatusControlPro
   return (
     <Card
       className={cn(
-        "mx-3 my-3 border-2 shadow-md transition-all duration-300",
+        "mx-3 my-3 border shadow-sm transition-all duration-200",
         !sidebarOpen && "lg:mx-2",
         isOpen
-          ? "bg-gradient-to-br from-emerald-50 via-green-50 to-white border-emerald-200"
-          : "bg-gradient-to-br from-gray-50 via-slate-50 to-white border-gray-300"
+          ? "bg-white border-slate-200"
+          : "bg-slate-50 border-slate-300"
       )}
     >
       {sidebarOpen ? (
         <div className="p-4 space-y-4">
-          {/* Status da Loja - Destaque */}
-          <div className={cn(
-            "rounded-xl p-4 transition-all duration-300",
-            isOpen
-              ? "bg-white/80 border-2 border-emerald-200 shadow-sm"
-              : "bg-white/60 border-2 border-gray-200"
-          )}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  "p-2.5 rounded-xl transition-all duration-300",
-                  isOpen
-                    ? "bg-emerald-500 shadow-lg shadow-emerald-500/30"
-                    : "bg-gray-400 shadow-md"
-                )}>
-                  <Store className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <Label htmlFor="store-status" className="text-sm font-bold text-gray-900 cursor-pointer block">
-                    Status da Loja
-                  </Label>
-                  <p className={cn(
-                    "text-xs font-semibold transition-colors",
-                    isOpen ? "text-emerald-600" : "text-gray-500"
-                  )}>
-                    {isOpen ? "● Aberta" : "● Fechada"}
-                  </p>
-                </div>
+          {/* Status */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className={cn(
+                "p-1.5 rounded-md",
+                isOpen ? "bg-slate-900" : "bg-slate-400"
+              )}>
+                <Store className="h-4 w-4 text-white" />
               </div>
-              <Switch
-                id="store-status"
-                checked={isOpen}
-                onCheckedChange={updateStoreStatus}
-                disabled={loading}
-                className={cn(
-                  "data-[state=checked]:bg-emerald-500",
-                  loading && "opacity-50 cursor-not-allowed"
-                )}
-              />
+              <div>
+                <Label htmlFor="store-status" className="text-sm font-medium text-slate-900 cursor-pointer">
+                  Status
+                </Label>
+                <p className="text-xs text-slate-500">
+                  {isOpen ? "Aberta" : "Fechada"}
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-gray-600 mt-2">
-              {isOpen
-                ? "Clientes podem fazer pedidos normalmente"
-                : "Pedidos estão bloqueados no cardápio"}
-            </p>
+            <Switch
+              id="store-status"
+              checked={isOpen}
+              onCheckedChange={updateStoreStatus}
+              disabled={loading}
+              className="data-[state=checked]:bg-slate-900"
+            />
           </div>
 
           {/* Prazos */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Prazo de Entrega */}
-            <div className="bg-white/70 rounded-lg p-3 border border-blue-100">
-              <Label htmlFor="delivery-time" className="text-xs font-semibold text-gray-700 flex items-center gap-1.5 mb-2">
-                <div className="p-1 bg-blue-100 rounded">
-                  <Bike className="h-3 w-3 text-blue-600" />
-                </div>
-                Entrega
-              </Label>
-              <div className="flex items-center gap-1">
-                <Input
-                  id="delivery-time"
-                  type="number"
-                  min="1"
-                  max="999"
-                  value={deliveryTime}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 0;
-                    setDeliveryTime(value);
-                  }}
-                  onBlur={(e) => {
-                    const value = parseInt(e.target.value) || 30;
-                    updateDeliveryTime(value);
-                  }}
-                  disabled={loading}
-                  className="h-9 text-center font-bold text-blue-600 bg-blue-50 border-blue-200 focus:border-blue-400 focus:ring-blue-400"
-                />
-                <span className="text-xs font-medium text-gray-500">min</span>
+          <div className="pt-3 border-t space-y-3">
+            {/* Entrega */}
+            <div className="flex items-center gap-3">
+              <Truck className="h-4 w-4 text-slate-600 flex-shrink-0" />
+              <div className="flex-1">
+                <Label htmlFor="delivery-time" className="text-xs text-slate-600">
+                  Entrega (min)
+                </Label>
               </div>
+              <Input
+                id="delivery-time"
+                type="number"
+                min="1"
+                max="999"
+                value={deliveryTime}
+                onChange={(e) => setDeliveryTime(parseInt(e.target.value) || 0)}
+                onBlur={(e) => updateDeliveryTime(parseInt(e.target.value) || 30)}
+                disabled={loading}
+                className="w-16 h-8 text-center text-sm"
+              />
             </div>
 
-            {/* Prazo de Retirada */}
-            <div className="bg-white/70 rounded-lg p-3 border border-purple-100">
-              <Label htmlFor="pickup-time" className="text-xs font-semibold text-gray-700 flex items-center gap-1.5 mb-2">
-                <div className="p-1 bg-purple-100 rounded">
-                  <Clock className="h-3 w-3 text-purple-600" />
-                </div>
-                Retirada
-              </Label>
-              <div className="flex items-center gap-1">
-                <Input
-                  id="pickup-time"
-                  type="number"
-                  min="1"
-                  max="999"
-                  value={pickupTime}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 0;
-                    setPickupTime(value);
-                  }}
-                  onBlur={(e) => {
-                    const value = parseInt(e.target.value) || 20;
-                    updatePickupTime(value);
-                  }}
-                  disabled={loading}
-                  className="h-9 text-center font-bold text-purple-600 bg-purple-50 border-purple-200 focus:border-purple-400 focus:ring-purple-400"
-                />
-                <span className="text-xs font-medium text-gray-500">min</span>
+            {/* Retirada */}
+            <div className="flex items-center gap-3">
+              <Clock className="h-4 w-4 text-slate-600 flex-shrink-0" />
+              <div className="flex-1">
+                <Label htmlFor="pickup-time" className="text-xs text-slate-600">
+                  Retirada (min)
+                </Label>
               </div>
+              <Input
+                id="pickup-time"
+                type="number"
+                min="1"
+                max="999"
+                value={pickupTime}
+                onChange={(e) => setPickupTime(parseInt(e.target.value) || 0)}
+                onBlur={(e) => updatePickupTime(parseInt(e.target.value) || 20)}
+                disabled={loading}
+                className="w-16 h-8 text-center text-sm"
+              />
             </div>
           </div>
         </div>
       ) : (
-        // Versão compacta para sidebar fechada
-        <div className="flex flex-col items-center gap-3 py-3">
-          <div className="relative">
-            <div className={cn(
-              "p-2 rounded-lg transition-all duration-300",
-              isOpen
-                ? "bg-emerald-500 shadow-lg shadow-emerald-500/30"
-                : "bg-gray-400 shadow-md"
-            )}>
-              <Store className="h-5 w-5 text-white" />
-            </div>
-            <div className={cn(
-              "absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-white",
-              isOpen ? "bg-emerald-500" : "bg-gray-400"
-            )} />
+        /* Versão compacta */
+        <div className="flex flex-col items-center gap-2 py-3">
+          <div className={cn(
+            "p-1.5 rounded-md",
+            isOpen ? "bg-slate-900" : "bg-slate-400"
+          )}>
+            <Store className="h-4 w-4 text-white" />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-0.5 bg-blue-100 rounded px-1.5 py-1">
-              <Bike className="h-3 w-3 text-blue-600" />
-              <span className="text-[10px] font-bold text-blue-600">{deliveryTime}</span>
-            </div>
-            <div className="flex items-center gap-0.5 bg-purple-100 rounded px-1.5 py-1">
-              <Clock className="h-3 w-3 text-purple-600" />
-              <span className="text-[10px] font-bold text-purple-600">{pickupTime}</span>
-            </div>
+          <div className="text-[10px] font-medium text-slate-600">
+            <div>{deliveryTime}'</div>
+            <div>{pickupTime}'</div>
           </div>
         </div>
       )}
