@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Layout from '@/components/Layout';
+import IFoodWidget from '@/components/IFoodWidget';
 import {
   Clock,
   MapPin,
@@ -276,6 +277,9 @@ const OrdersKanban = () => {
 
   return (
     <Layout>
+      {/* Widget do iFood */}
+      {restaurantId && <IFoodWidget restaurantId={restaurantId} />}
+
       <div className="p-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">

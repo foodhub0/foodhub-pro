@@ -23,6 +23,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import DiagnosticMenu from "./pages/DiagnosticMenu";
 import Costs from "./pages/Costs";
 import Customers from "./pages/Customers";
+import IFoodIntegration from "./pages/IFoodIntegration";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/couriers" element={<Couriers />} />
             <Route path="/costs" element={<Costs />} />
             <Route path="/customers" element={<Customers />} />
+            <Route path="/ifood-integration" element={<IFoodIntegration />} />
             <Route path="/m/:slug" element={<PublicMenu />} />
             <Route path="/m/:slug/checkout" element={<Checkout />} />
             <Route path="/m/:slug/order/:orderId" element={<OrderConfirmation />} />
