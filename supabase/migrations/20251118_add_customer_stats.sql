@@ -50,13 +50,13 @@ BEGIN
         AND status = 'delivered'
       ),
       total_spent = (
-        SELECT COALESCE(SUM(total), 0)
+        SELECT COALESCE(SUM(total_amount), 0)
         FROM orders
         WHERE customer_id = NEW.customer_id
         AND status = 'delivered'
       ),
       average_ticket = (
-        SELECT COALESCE(AVG(total), 0)
+        SELECT COALESCE(AVG(total_amount), 0)
         FROM orders
         WHERE customer_id = NEW.customer_id
         AND status = 'delivered'
@@ -90,13 +90,13 @@ SET
     AND o.status = 'delivered'
   ),
   total_spent = (
-    SELECT COALESCE(SUM(o.total), 0)
+    SELECT COALESCE(SUM(o.total_amount), 0)
     FROM orders o
     WHERE o.customer_id = c.id
     AND o.status = 'delivered'
   ),
   average_ticket = (
-    SELECT COALESCE(AVG(o.total), 0)
+    SELECT COALESCE(AVG(o.total_amount), 0)
     FROM orders o
     WHERE o.customer_id = c.id
     AND o.status = 'delivered'
