@@ -34,11 +34,11 @@ interface ProductVariation {
 
 interface ProductModalProps {
   product: Product | null;
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
+export const ProductModal = ({ product, open, onOpenChange }: ProductModalProps) => {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
   const [selectedVariations, setSelectedVariations] = useState<CartVariation[]>([]);
@@ -49,14 +49,14 @@ export const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) =>
   const { toast } = useToast();
 
   useEffect(() => {
-    if (product && isOpen) {
+    if (product && open) {
       loadVariations();
       // Reset state
       setQuantity(1);
       setNotes('');
       setSelectedVariations([]);
     }
-  }, [product, isOpen]);
+  }, [product, open]);
 
   const loadVariations = async () => {
     if (!product) return;
@@ -130,7 +130,7 @@ export const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) =>
         description: `${quantity}x ${product.name}`,
       });
 
-      onClose();
+      onOpenChange(false);
     } catch (error) {
       toast({
         title: 'Erro ao adicionar',
@@ -150,7 +150,7 @@ export const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) =>
   if (!product) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 gap-0">
         {/* Imagem do Produto - Full Width */}
         {product.image_url && (
@@ -164,7 +164,7 @@ export const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) =>
               variant="ghost"
               size="icon"
               className="absolute right-3 top-3 bg-white/90 hover:bg-white rounded-full shadow-md"
-              onClick={onClose}
+              onClick={() => onOpenChange(false)}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -180,7 +180,7 @@ export const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) =>
                 variant="ghost"
                 size="icon"
                 className="absolute right-4 top-4"
-                onClick={onClose}
+                onClick={() => onOpenChange(false)}
               >
                 <X className="h-4 w-4" />
               </Button>
