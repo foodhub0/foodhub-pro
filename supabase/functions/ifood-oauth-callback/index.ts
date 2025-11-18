@@ -71,11 +71,19 @@ serve(async (req) => {
       throw new Error('User code has expired. Please start the OAuth flow again.');
     }
 
+    // Usar credenciais centralizadas
+    const clientId = Deno.env.get('IFOOD_CLIENT_ID');
+    const clientSecret = Deno.env.get('IFOOD_CLIENT_SECRET');
+
+    if (!clientId || !clientSecret) {
+      throw new Error('iFood credentials not configured. Please contact support.');
+    }
+
     // Trocar authorization code por access token
     const tokenRequestBody = new URLSearchParams({
       grantType: 'authorization_code',
-      clientId: integration.client_id,
-      clientSecret: integration.client_secret,
+      clientId: clientId,
+      clientSecret: clientSecret,
       authorizationCode: authorizationCode,
       authorizationCodeVerifier: integration.authorization_code_verifier,
     });

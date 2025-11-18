@@ -30,11 +30,6 @@ export default function IFoodIntegration() {
   const [syncing, setSyncing] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string>('');
 
-  // OAuth State
-  const [clientId, setClientId] = useState('');
-  const [clientSecret, setClientSecret] = useState('');
-  const [showCredentialsForm, setShowCredentialsForm] = useState(false);
-
   // Integration State
   const [integration, setIntegration] = useState<any>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -93,7 +88,6 @@ export default function IFoodIntegration() {
       if (data) {
         setIntegration(data);
         setIsAuthorized(data.is_authorized);
-        setClientId(data.client_id || '');
 
         // Buscar merchants vinculados
         const { data: merchants } = await supabase
@@ -129,11 +123,6 @@ export default function IFoodIntegration() {
   };
 
   const handleConnectIFood = async () => {
-    if (!clientId || !clientSecret) {
-      toast.error('Por favor, preencha Client ID e Client Secret');
-      return;
-    }
-
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -150,8 +139,6 @@ export default function IFoodIntegration() {
           },
           body: JSON.stringify({
             restaurantId,
-            clientId,
-            clientSecret,
           }),
         }
       );
@@ -293,81 +280,40 @@ export default function IFoodIntegration() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {!showCredentialsForm ? (
-                  <div className="flex flex-col items-center gap-4 py-8">
-                    <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center">
-                      <Store className="w-12 h-12 text-orange-600" />
-                    </div>
-                    <div className="text-center max-w-md">
-                      <h3 className="text-lg font-semibold mb-2">Pronto para começar?</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Você será redirecionado para o portal do iFood para autorizar a integração. O processo leva apenas alguns segundos.
-                      </p>
-                    </div>
-                    <Button
-                      size="lg"
-                      onClick={() => setShowCredentialsForm(true)}
-                      className="gap-2"
-                    >
-                      <ExternalLink className="h-5 w-5" />
-                      Conectar com iFood
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center max-w-md">
-                      Você precisará ter suas credenciais de API do Portal de Desenvolvedores do iFood (Client ID e Client Secret)
+                <div className="flex flex-col items-center gap-6 py-8">
+                  <div className="w-32 h-32 bg-gradient-to-br from-orange-100 to-orange-50 rounded-full flex items-center justify-center shadow-lg">
+                    <Store className="w-16 h-16 text-orange-600" />
+                  </div>
+                  <div className="text-center max-w-md">
+                    <h3 className="text-2xl font-bold mb-3">Conecte sua conta do iFood</h3>
+                    <p className="text-muted-foreground">
+                      Você será redirecionado para fazer login no iFood e autorizar o FoodHub Pro a acessar seus dados.
+                      Leva apenas alguns segundos!
                     </p>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>Onde encontrar suas credenciais?</strong>
-                        <br />
-                        Acesse o <a href="https://developer.ifood.com.br" target="_blank" rel="noopener noreferrer" className="underline">Portal de Desenvolvedores do iFood</a> e copie seu Client ID e Client Secret.
-                      </AlertDescription>
-                    </Alert>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="clientId">Client ID</Label>
-                      <Input
-                        id="clientId"
-                        value={clientId}
-                        onChange={(e) => setClientId(e.target.value)}
-                        placeholder="seu-client-id"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="clientSecret">Client Secret</Label>
-                      <Input
-                        id="clientSecret"
-                        type="password"
-                        value={clientSecret}
-                        onChange={(e) => setClientSecret(e.target.value)}
-                        placeholder="seu-client-secret"
-                      />
-                    </div>
-
-                    <div className="flex gap-2 pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowCredentialsForm(false)}
-                        className="flex-1"
-                      >
-                        Voltar
-                      </Button>
-                      <Button
-                        onClick={handleConnectIFood}
-                        disabled={loading || !clientId || !clientSecret}
-                        className="flex-1 gap-2"
-                      >
-                        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                        {!loading && <ExternalLink className="h-4 w-4" />}
-                        Continuar
-                      </Button>
-                    </div>
+                  <Button
+                    size="lg"
+                    onClick={handleConnectIFood}
+                    disabled={loading}
+                    className="gap-2 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Conectando...
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="h-5 w-5" />
+                        Conectar com iFood
+                      </>
+                    )}
+                  </Button>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="h-3 w-3 text-green-600" />
+                    <span>Seguro e criptografado</span>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
 
@@ -431,18 +377,12 @@ export default function IFoodIntegration() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {integration && (
-                    <div className="p-4 bg-muted rounded-lg space-y-2">
+                  {integration && integration.last_sync_at && (
+                    <div className="p-4 bg-muted rounded-lg">
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Client ID:</span>
-                        <span className="font-mono">{integration.client_id.substring(0, 20)}...</span>
+                        <span className="text-muted-foreground">Última sincronização:</span>
+                        <span>{new Date(integration.last_sync_at).toLocaleString('pt-BR')}</span>
                       </div>
-                      {integration.last_sync_at && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Última sincronização:</span>
-                          <span>{new Date(integration.last_sync_at).toLocaleString('pt-BR')}</span>
-                        </div>
-                      )}
                     </div>
                   )}
 

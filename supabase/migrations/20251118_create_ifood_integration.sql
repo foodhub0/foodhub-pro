@@ -2,13 +2,11 @@
 -- Migration: 20251118_create_ifood_integration
 
 -- Tabela para armazenar tokens OAuth e configurações do iFood
+-- NOTA: client_id e client_secret são armazenados como variáveis de ambiente
+-- (IFOOD_CLIENT_ID e IFOOD_CLIENT_SECRET) pois o FoodHub Pro usa credenciais centralizadas
 CREATE TABLE IF NOT EXISTS public.ifood_integrations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   restaurant_id UUID NOT NULL REFERENCES public.restaurants(id) ON DELETE CASCADE,
-
-  -- OAuth credentials
-  client_id TEXT NOT NULL,
-  client_secret TEXT NOT NULL,
 
   -- Tokens
   access_token TEXT,
