@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Layout } from '@/components/Layout';
+import Layout from '@/components/Layout';
 import { StatsCard } from '@/components/customers/StatsCard';
 import { FilterTags, CustomerFilter } from '@/components/customers/FilterTags';
 import { CustomerTable, Customer } from '@/components/customers/CustomerTable';
