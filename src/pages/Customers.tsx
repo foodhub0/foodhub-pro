@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { StatsCard } from '@/components/customers/StatsCard';
 import { FilterTags, CustomerFilter } from '@/components/customers/FilterTags';
@@ -28,69 +28,95 @@ import {
   Plus,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock data - substituir por dados reais do backend
-const mockCustomers: Customer[] = [
-  {
-    id: '1',
-    name: 'João Silva',
-    email: 'joao@email.com',
-    phone: '(11) 99999-9999',
-    lastOrder: '2025-01-15',
-    totalOrders: 12,
-    totalSpent: 850.50,
-    status: 'recurring',
-  },
-  {
-    id: '2',
-    name: 'Maria Santos',
-    email: 'maria@email.com',
-    phone: '(11) 98888-8888',
-    lastOrder: '2025-01-18',
-    totalOrders: 1,
-    totalSpent: 75.00,
-    status: 'new',
-  },
-  {
-    id: '3',
-    name: 'Pedro Oliveira',
-    email: 'pedro@email.com',
-    phone: '(11) 97777-7777',
-    lastOrder: '2024-12-10',
-    totalOrders: 5,
-    totalSpent: 320.00,
-    status: 'at_risk',
-  },
-  {
-    id: '4',
-    name: 'Ana Costa',
-    email: 'ana@email.com',
-    phone: '(11) 96666-6666',
-    lastOrder: '2024-11-05',
-    totalOrders: 8,
-    totalSpent: 450.00,
-    status: 'inactive',
-  },
-  {
-    id: '5',
-    name: 'Carlos Ferreira',
-    email: 'carlos@email.com',
-    phone: '(11) 95555-5555',
-    lastOrder: '2025-01-16',
-    totalOrders: 25,
-    totalSpent: 1850.00,
-    status: 'recurring',
-  },
-];
+// Função para determinar o status do cliente baseado nos dados
+const getCustomerStatus = (totalOrders: number, lastOrderDate: string | null): 'new' | 'recurring' | 'at_risk' | 'inactive' => {
+  if (totalOrders === 0 || totalOrders === 1) return 'new';
+
+  if (!lastOrderDate) return 'inactive';
+
+  const lastOrder = new Date(lastOrderDate);
+  const now = new Date();
+  const daysSinceLastOrder = Math.floor((now.getTime() - lastOrder.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (daysSinceLastOrder > 60) return 'inactive';
+  if (daysSinceLastOrder > 30) return 'at_risk';
+  if (totalOrders >= 2) return 'recurring';
+
+  return 'new';
+};
 
 const Customers = () => {
   const { toast } = useToast();
-  const [customers] = useState<Customer[]>(mockCustomers);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<CustomerFilter>('all');
   const [period, setPeriod] = useState('month');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
+
+  // Carregar clientes do banco de dados
+  useEffect(() => {
+    loadCustomers();
+  }, []);
+
+  const loadCustomers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Transformar dados do banco para o formato esperado
+      const formattedCustomers: Customer[] = (data || []).map((customer) => {
+        const totalOrders = customer.total_orders || 0;
+        const totalSpent = customer.total_spent || 0;
+        const lastOrder = customer.last_order_at || null;
+        const status = getCustomerStatus(totalOrders, lastOrder);
+
+        return {
+          id: customer.id,
+          name: customer.name,
+          email: customer.email || '',
+          phone: customer.phone ? formatPhoneDisplay(customer.phone) : '',
+          lastOrder: lastOrder || '',
+          totalOrders,
+          totalSpent,
+          status,
+        };
+      });
+
+      setCustomers(formattedCustomers);
+    } catch (error) {
+      console.error('Error loading customers:', error);
+      toast({
+        title: 'Erro ao carregar clientes',
+        description: 'Não foi possível carregar a lista de clientes',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatPhoneDisplay = (phone: string) => {
+    // Se já está formatado, retornar como está
+    if (phone.includes('(') || phone.includes('-')) return phone;
+
+    // Formatar telefone para exibição
+    const numbers = phone.replace(/\D/g, '');
+    if (numbers.length === 11) {
+      return numbers.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    } else if (numbers.length === 10) {
+      return numbers.replace(/^(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+    return phone;
+  };
 
   // Filtrar e buscar clientes
   const filteredCustomers = useMemo(() => {
@@ -148,32 +174,112 @@ const Customers = () => {
   };
 
   const handleImport = async (file: File) => {
-    // Implementar lógica de importação
-    console.log('Importing file:', file);
-    // Simular delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+
+      // Pular o cabeçalho (primeira linha)
+      const dataLines = lines.slice(1);
+
+      const customersToImport = dataLines.map(line => {
+        const [name, email, phone] = line.split(',').map(item => item.trim());
+        return {
+          name,
+          email: email || null,
+          phone: phone.replace(/\D/g, ''),
+        };
+      });
+
+      // Inserir todos os clientes
+      const { error } = await supabase
+        .from('customers')
+        .insert(customersToImport);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Importação concluída!',
+        description: `${customersToImport.length} clientes foram importados com sucesso`,
+      });
+
+      // Recarregar a lista de clientes
+      loadCustomers();
+    } catch (error) {
+      console.error('Error importing customers:', error);
+      toast({
+        title: 'Erro na importação',
+        description: 'Verifique o formato do arquivo e tente novamente',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleNewCustomer = async (data: NewCustomerData) => {
-    // Implementar lógica de cadastro
-    console.log('New customer:', data);
-    // Simular delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .insert({
+          name: data.name,
+          email: data.email || null,
+          phone: data.phone.replace(/\D/g, ''),
+          address: data.address || null,
+          city: data.city || null,
+          zipcode: data.zipCode?.replace(/\D/g, '') || null,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Cliente cadastrado!',
+        description: 'O cliente foi adicionado com sucesso',
+      });
+
+      // Recarregar a lista de clientes
+      loadCustomers();
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      throw error; // Deixar o modal tratar o erro
+    }
   };
 
-  const handleEdit = (customer: Customer) => {
+  const handleEdit = async (customer: Customer) => {
+    // Por enquanto, mostrar mensagem de em desenvolvimento
+    // TODO: Implementar modal de edição
     toast({
       title: 'Editar cliente',
       description: `Edição de ${customer.name} (Em desenvolvimento)`,
     });
   };
 
-  const handleDelete = (customer: Customer) => {
-    toast({
-      title: 'Excluir cliente',
-      description: `Exclusão de ${customer.name} (Em desenvolvimento)`,
-      variant: 'destructive',
-    });
+  const handleDelete = async (customer: Customer) => {
+    // Confirmar antes de deletar
+    if (!window.confirm(`Tem certeza que deseja excluir ${customer.name}?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', customer.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Cliente excluído',
+        description: `${customer.name} foi removido com sucesso`,
+      });
+
+      // Recarregar a lista de clientes
+      loadCustomers();
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      toast({
+        title: 'Erro ao excluir cliente',
+        description: 'Não foi possível excluir o cliente. Ele pode ter pedidos associados.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleViewOrders = (customer: Customer) => {
@@ -182,6 +288,19 @@ const Customers = () => {
       description: `Visualizando pedidos de ${customer.name} (Em desenvolvimento)`,
     });
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando clientes...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
