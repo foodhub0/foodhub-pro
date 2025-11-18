@@ -411,24 +411,28 @@ const Customers = () => {
             value={stats.newCustomers}
             icon={UserPlus}
             variant="success"
+            description="Primeira compra registrada"
           />
           <StatsCard
             title="Recorrentes"
             value={stats.recurring}
             icon={UserCheck}
             variant="primary"
+            description={`Mais de uma compra no período. Recorrência média: ${stats.averageRecurrence.toFixed(1)}x`}
           />
           <StatsCard
             title="Em Risco"
             value={stats.atRisk}
             icon={AlertTriangle}
             variant="warning"
+            description="Não compraram no período"
           />
           <StatsCard
             title="Inativos"
             value={stats.inactive}
             icon={UserX}
             variant="danger"
+            description="Não compram há 2 meses"
           />
         </div>
 

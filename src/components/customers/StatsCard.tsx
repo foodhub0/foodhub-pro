@@ -5,6 +5,7 @@ interface StatsCardProps {
   title: string;
   value: string | number;
   icon: LucideIcon;
+  description?: string;
   trend?: {
     value: string;
     isPositive: boolean;
@@ -12,7 +13,7 @@ interface StatsCardProps {
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
 }
 
-export const StatsCard = ({ title, value, icon: Icon, trend, variant = 'default' }: StatsCardProps) => {
+export const StatsCard = ({ title, value, icon: Icon, description, trend, variant = 'default' }: StatsCardProps) => {
   const variantStyles = {
     default: 'bg-white border-gray-200',
     primary: 'bg-gradient-to-br from-blue-50 to-white border-blue-200',
@@ -35,6 +36,9 @@ export const StatsCard = ({ title, value, icon: Icon, trend, variant = 'default'
         <div className="flex-1">
           <p className="text-sm font-medium text-[#4F4F4F] mb-1">{title}</p>
           <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
+          {description && (
+            <p className="text-xs text-gray-600 mb-2">{description}</p>
+          )}
           {trend && (
             <div className="flex items-center gap-1">
               <span
