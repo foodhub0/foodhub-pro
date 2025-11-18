@@ -77,7 +77,7 @@ const PublicMenu = () => {
   // IntersectionObserver para detectar categoria visível (estilo iFood)
   useEffect(() => {
     // Não aplicar durante busca ou quando usuário clicou em uma categoria
-    if (searchQuery || isScrollingRef.current) return;
+    if (searchQuery || isScrollingRef.current || categories.length === 0) return;
 
     // Limpar observer anterior
     if (observerRef.current) {
@@ -87,8 +87,8 @@ const PublicMenu = () => {
     // Configurar IntersectionObserver
     const observerOptions = {
       root: null, // viewport
-      rootMargin: '-20% 0px -60% 0px', // Detecta quando está 20% do topo
-      threshold: 0.1,
+      rootMargin: '-120px 0px -50% 0px', // Detecta quando está logo abaixo do header fixo
+      threshold: [0, 0.25, 0.5, 0.75, 1.0],
     };
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
@@ -96,14 +96,14 @@ const PublicMenu = () => {
       const visibleEntries = entries.filter(entry => entry.isIntersecting);
 
       if (visibleEntries.length > 0) {
-        // Pegar a primeira seção visível
+        // Pegar a seção com maior intersectionRatio (mais visível)
         const mostVisible = visibleEntries.reduce((prev, current) => {
           return current.intersectionRatio > prev.intersectionRatio ? current : prev;
         });
 
         const categoryId = mostVisible.target.getAttribute('data-category-id');
 
-        if (categoryId) {
+        if (categoryId && categoryId !== activeCategory) {
           setActiveCategory(categoryId);
 
           // Scroll suave da tab para o centro
@@ -121,19 +121,22 @@ const PublicMenu = () => {
 
     observerRef.current = new IntersectionObserver(observerCallback, observerOptions);
 
-    // Observar todas as seções de categoria
-    Object.values(categoryRefs.current).forEach(element => {
-      if (element) {
-        observerRef.current?.observe(element);
-      }
-    });
+    // Aguardar um momento para os elementos renderizarem
+    setTimeout(() => {
+      // Observar todas as seções de categoria
+      Object.values(categoryRefs.current).forEach(element => {
+        if (element) {
+          observerRef.current?.observe(element);
+        }
+      });
+    }, 100);
 
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
     };
-  }, [categories, searchQuery]);
+  }, [categories, searchQuery, products, activeCategory]);
 
   const loadData = async () => {
     const { data: restaurantData } = await supabase
@@ -487,10 +490,10 @@ const PublicMenu = () => {
             <div
               key={category.id}
               data-category-id={category.id}
-              className="mb-8 scroll-mt-52"
+              className="mb-8 scroll-mt-44"
               ref={(el) => { categoryRefs.current[category.id] = el; }}
             >
-              <h2 className="text-lg font-bold text-foreground mb-4 uppercase sticky top-[168px] bg-background py-2 -mx-4 px-4 z-10">
+              <h2 className="text-lg font-bold text-foreground mb-4 uppercase">
                 {category.name}
               </h2>
               <div className="space-y-4">
