@@ -8,7 +8,6 @@ import {
   Table2,
   ShoppingBag,
   Users,
-  Ticket,
   Settings,
   LogOut,
   Menu,
@@ -66,7 +65,6 @@ const Layout = ({ children }: LayoutProps) => {
     { icon: ShoppingBag, label: "Pedidos", path: "/orders" },
     { icon: Calculator, label: "Custos", path: "/costs" },
     { icon: Users, label: "Entregadores", path: "/couriers" },
-    { icon: Ticket, label: "Cupons", path: "/coupons" },
     { icon: Eye, label: "Ver Cardápio", path: "/menu-preview" },
   ];
 
@@ -146,7 +144,7 @@ const Layout = ({ children }: LayoutProps) => {
               "w-full justify-start gap-3",
               !sidebarOpen && "lg:justify-center lg:px-2"
             )}
-            onClick={() => navigate("/settings")}
+            onClick={() => navigate("/restaurant")}
           >
             <Settings className="h-5 w-5 flex-shrink-0" />
             {sidebarOpen && <span>Configurações</span>}
