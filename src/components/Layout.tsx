@@ -17,6 +17,8 @@ import {
   Calculator,
   UserCircle,
   Bike,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -114,6 +116,23 @@ const Layout = ({ children }: LayoutProps) => {
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
+
+        {/* Toggle Button Desktop - Fixo no topo */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className={cn(
+            "hidden lg:flex absolute -right-3 top-20 z-50 h-8 w-8 rounded-full border-2 bg-background shadow-md hover:bg-accent",
+            "transition-all duration-300"
+          )}
+        >
+          {sidebarOpen ? (
+            <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </Button>
 
         {/* Controle de Status da Loja */}
         <StoreStatusControl restaurantId={restaurantId} sidebarOpen={sidebarOpen} />

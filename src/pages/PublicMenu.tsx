@@ -322,42 +322,36 @@ const PublicMenu = () => {
                 </div>
               )}
 
-              {/* Info */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" />
-                  <span>Padrão</span>
-                </div>
+              {/* Info - Cards com prazos */}
+              <div className="flex items-center gap-3 flex-wrap mt-3">
                 {restaurant.delivery_time_estimate && (
-                  <>
-                    <span>•</span>
-                    <div className="flex items-center gap-1">
-                      <Bike className="h-4 w-4" />
-                      <span>{restaurant.delivery_time_estimate} min entrega</span>
+                  <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2">
+                    <Bike className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <div>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Entrega</p>
+                      <p className="text-sm font-bold text-blue-700 dark:text-blue-300">{restaurant.delivery_time_estimate} min</p>
                     </div>
-                  </>
+                  </div>
                 )}
                 {restaurant.pickup_time_estimate && (
-                  <>
-                    <span>•</span>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      <span>{restaurant.pickup_time_estimate} min retirada</span>
+                  <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg px-3 py-2">
+                    <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    <div>
+                      <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold">Retirada</p>
+                      <p className="text-sm font-bold text-purple-700 dark:text-purple-300">{restaurant.pickup_time_estimate} min</p>
                     </div>
-                  </>
+                  </div>
                 )}
                 {restaurant.delivery_fee !== null && (
-                  <>
-                    <span>•</span>
-                    <div className="flex items-center gap-1">
-                      <Bike className="h-4 w-4" />
-                      <span>
-                        {restaurant.delivery_fee === 0
-                          ? "Grátis"
-                          : formatCurrency(restaurant.delivery_fee)}
-                      </span>
+                  <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
+                    <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <div>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Taxa</p>
+                      <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                        {restaurant.delivery_fee === 0 ? "Grátis" : formatCurrency(restaurant.delivery_fee)}
+                      </p>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
@@ -365,15 +359,26 @@ const PublicMenu = () => {
         </div>
       </div>
 
-      {/* Banner de Loja Fechada */}
+      {/* Banner de Loja Fechada - Melhorado */}
       {!restaurant.is_open && (
-        <div className="px-4 py-3 bg-red-100 dark:bg-red-900/20 border-y border-red-200 dark:border-red-800">
+        <div className="relative px-4 py-4 bg-gradient-to-r from-red-50 via-orange-50 to-red-50 dark:from-red-900/20 dark:via-orange-900/20 dark:to-red-900/20 border-y-2 border-red-300 dark:border-red-700 shadow-sm">
           <div className="max-w-2xl mx-auto">
-            <div className="flex items-center gap-2 text-red-800 dark:text-red-300">
-              <Store className="h-5 w-5" />
-              <div>
-                <p className="font-semibold">Loja fechada no momento</p>
-                <p className="text-sm">Não estamos aceitando pedidos agora. Volte mais tarde!</p>
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-red-500 rounded-full shadow-lg">
+                <Store className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-bold text-red-900 dark:text-red-200 text-base">
+                    🔴 Loja Fechada
+                  </h3>
+                  <span className="px-2 py-0.5 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 text-xs font-semibold rounded-full">
+                    Indisponível
+                  </span>
+                </div>
+                <p className="text-sm text-red-700 dark:text-red-300 leading-relaxed">
+                  Não estamos aceitando pedidos no momento. Por favor, volte mais tarde ou entre em contato para saber nosso horário de funcionamento.
+                </p>
               </div>
             </div>
           </div>
@@ -517,48 +522,58 @@ const PublicMenu = () => {
                   <div
                     key={product.id}
                     onClick={() => handleProductClick(product)}
-                    className="flex items-center gap-4 bg-card rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    className="group relative flex items-center gap-4 bg-card rounded-2xl p-4 border border-border/50 hover:border-primary/30 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden"
                   >
-                    <div className="flex-1 min-w-0">
+                    {/* Efeito de brilho no hover */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="flex-1 min-w-0 relative z-10">
                       {index === 0 && (
-                        <Badge className="mb-2 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 hover:bg-purple-100">
-                          O mais pedido!
+                        <Badge className="mb-2 bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-gradient-to-r font-semibold shadow-sm">
+                          ⭐ O mais pedido!
                         </Badge>
                       )}
-                      <h3 className="font-semibold text-foreground mb-1 line-clamp-2">
+                      <h3 className="font-bold text-foreground mb-1.5 line-clamp-2 group-hover:text-primary transition-colors">
                         {product.name}
                       </h3>
                       {product.description && (
-                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
                           {product.description}
                         </p>
                       )}
-                      <p className="font-semibold text-foreground">
-                        a partir de {formatCurrency(product.price || product.base_price)}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-lg font-bold text-primary">
+                          {formatCurrency(product.price || product.base_price)}
+                        </p>
+                        {product.is_featured && (
+                          <Badge variant="secondary" className="text-xs">
+                            Destaque
+                          </Badge>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden bg-muted">
+                    <div className="relative flex-shrink-0 w-32 h-32 rounded-2xl overflow-hidden bg-muted shadow-md group-hover:shadow-xl transition-shadow duration-300">
                       {product.image_url ? (
                         <img
                           src={product.image_url}
                           alt={product.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-                          <span className="text-3xl">🍕</span>
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+                          <span className="text-4xl opacity-40">🍽️</span>
                         </div>
                       )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <Button
                         size="icon"
-                        className="absolute bottom-2 right-2 rounded-full h-8 w-8 shadow-lg bg-white hover:bg-gray-50 text-primary"
+                        className="absolute bottom-2 right-2 rounded-full h-9 w-9 shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground scale-90 group-hover:scale-100 transition-transform duration-300"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleProductClick(product);
                         }}
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-5 w-5" />
                       </Button>
                     </div>
                   </div>
