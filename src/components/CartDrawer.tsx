@@ -14,12 +14,12 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
 interface CartDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   restaurantSlug?: string;
 }
 
-export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps) => {
+export const CartDrawer = ({ open, onOpenChange, restaurantSlug }: CartDrawerProps) => {
   const { items, getTotal, getItemTotal, updateQuantity, removeItem, clearCart } = useCart();
   const navigate = useNavigate();
   const [couponCode, setCouponCode] = useState('');
@@ -65,13 +65,13 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
   const handleCheckout = () => {
     if (restaurantSlug) {
       navigate(`/m/${restaurantSlug}/checkout`);
-      onClose();
+      onOpenChange(false);
     }
   };
 
   if (items.length === 0) {
     return (
-      <Sheet open={isOpen} onOpenChange={onClose}>
+      <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-lg bg-gray-50">
           <SheetHeader className="border-b bg-white -mx-6 px-6 pb-4">
             <SheetTitle className="text-lg font-bold">Carrinho</SheetTitle>
@@ -93,7 +93,7 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg flex flex-col bg-gray-50">
         <SheetHeader className="border-b bg-white -mx-6 px-6 pb-4">
           <div className="flex items-center justify-between">
@@ -316,7 +316,7 @@ export const CartDrawer = ({ isOpen, onClose, restaurantSlug }: CartDrawerProps)
 
           <Button
             variant="ghost"
-            onClick={onClose}
+            onClick={() => onOpenChange(false)}
             className="w-full text-[#005BFF] hover:bg-blue-50"
           >
             Continuar Comprando
