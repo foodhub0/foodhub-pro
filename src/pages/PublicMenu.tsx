@@ -61,8 +61,11 @@ const PublicMenu = () => {
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [rating, setRating] = useState<number>(0);
   const [totalRatings, setTotalRatings] = useState<number>(0);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const tabsRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const isScrollingRef = useRef(false);
 
   useEffect(() => {
     if (slug) {
@@ -70,33 +73,66 @@ const PublicMenu = () => {
     }
   }, [slug]);
 
-  // Scroll Spy para sincronizar categorias com scroll
+  // IntersectionObserver para detectar categoria visível (estilo iFood)
   useEffect(() => {
-    const handleScroll = () => {
-      if (searchQuery || selectedCategory) return; // Não aplicar scroll spy durante busca/filtro
+    // Não aplicar durante busca ou quando usuário clicou em uma categoria
+    if (searchQuery || isScrollingRef.current) return;
 
-      const scrollPosition = window.scrollY + 300; // Offset para ativar mais cedo
+    // Limpar observer anterior
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
 
-      // Encontrar qual categoria está visível
-      for (const category of categories) {
-        const element = categoryRefs.current[category.id];
-        if (element) {
-          const { offsetTop, offsetHeight } = element;
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            // Scroll automático da tab
-            const tabButton = document.querySelector(`[data-category="${category.id}"]`);
-            if (tabButton && tabsRef.current) {
-              tabButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            }
-            return;
+    // Configurar IntersectionObserver
+    const observerOptions = {
+      root: null, // viewport
+      rootMargin: '-20% 0px -60% 0px', // Detecta quando está 20% do topo
+      threshold: 0.1,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      // Encontrar a seção mais visível
+      const visibleEntries = entries.filter(entry => entry.isIntersecting);
+
+      if (visibleEntries.length > 0) {
+        // Pegar a primeira seção visível
+        const mostVisible = visibleEntries.reduce((prev, current) => {
+          return current.intersectionRatio > prev.intersectionRatio ? current : prev;
+        });
+
+        const categoryId = mostVisible.target.getAttribute('data-category-id');
+
+        if (categoryId) {
+          setActiveCategory(categoryId);
+
+          // Scroll suave da tab para o centro
+          const tabButton = document.querySelector(`[data-category="${categoryId}"]`);
+          if (tabButton && tabsRef.current) {
+            tabButton.scrollIntoView({
+              behavior: 'smooth',
+              block: 'nearest',
+              inline: 'center'
+            });
           }
         }
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [categories, searchQuery, selectedCategory]);
+    observerRef.current = new IntersectionObserver(observerCallback, observerOptions);
+
+    // Observar todas as seções de categoria
+    Object.values(categoryRefs.current).forEach(element => {
+      if (element) {
+        observerRef.current?.observe(element);
+      }
+    });
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [categories, searchQuery]);
 
   const loadData = async () => {
     const { data: restaurantData } = await supabase
@@ -171,17 +207,41 @@ const PublicMenu = () => {
   };
 
   const handleCategoryClick = (categoryId: string | null) => {
+    // Marcar que estamos scrollando programaticamente
+    isScrollingRef.current = true;
+
+    // Se clicou em "Todos", limpa filtro e volta ao topo
     if (categoryId === null) {
       setSelectedCategory(null);
+      setActiveCategory(null);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      setSelectedCategory(categoryId);
-      const element = categoryRefs.current[categoryId];
-      if (element) {
-        const offset = 180; // Altura do header fixo
-        const elementPosition = element.offsetTop - offset;
-        window.scrollTo({ top: elementPosition, behavior: 'smooth' });
-      }
+
+      // Reativar observer após scroll
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 1000);
+      return;
+    }
+
+    // Se estava filtrando, limpa o filtro
+    setSelectedCategory(null);
+    setActiveCategory(categoryId);
+
+    // Scroll suave até a seção
+    const element = categoryRefs.current[categoryId];
+    if (element) {
+      const headerOffset = 200; // Altura do header sticky + tabs
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: elementPosition,
+        behavior: 'smooth'
+      });
+
+      // Reativar observer após o scroll completar
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 1000);
     }
   };
 
@@ -317,38 +377,45 @@ const PublicMenu = () => {
           </div>
         </div>
 
-        {/* Tabs de Categorias */}
-        <div className="overflow-x-auto scrollbar-hide border-t" ref={tabsRef}>
+        {/* Tabs de Categorias - Sticky com Scroll Sincronizado */}
+        <div className="overflow-x-auto scrollbar-hide border-t bg-white" ref={tabsRef}>
           <div className="flex gap-1 px-4 min-w-max">
             <Button
               variant="ghost"
               data-category="all"
               className={cn(
-                "rounded-none border-b-2 px-4 py-3 font-medium transition-colors whitespace-nowrap",
-                !selectedCategory
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
+                "rounded-none border-b-2 px-4 py-3 font-medium transition-all duration-200 whitespace-nowrap",
+                !selectedCategory && !activeCategory
+                  ? "border-[#007BFF] text-[#007BFF] bg-[#E8F1FF]/30"
+                  : "border-transparent text-gray-600 hover:text-[#007BFF] hover:bg-[#E8F1FF]/20"
               )}
               onClick={() => handleCategoryClick(null)}
             >
               Todos
             </Button>
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant="ghost"
-                data-category={category.id}
-                className={cn(
-                  "rounded-none border-b-2 px-4 py-3 font-medium transition-colors whitespace-nowrap",
-                  selectedCategory === category.id
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
-                )}
-                onClick={() => handleCategoryClick(category.id)}
-              >
-                {category.name}
-              </Button>
-            ))}
+            {categories.map((category) => {
+              // Ativo se está selecionado (filtro) OU é a categoria atual do scroll
+              const isActive = selectedCategory
+                ? selectedCategory === category.id
+                : activeCategory === category.id;
+
+              return (
+                <Button
+                  key={category.id}
+                  variant="ghost"
+                  data-category={category.id}
+                  className={cn(
+                    "rounded-none border-b-2 px-4 py-3 font-medium transition-all duration-200 whitespace-nowrap",
+                    isActive
+                      ? "border-[#007BFF] text-[#007BFF] bg-[#E8F1FF]/30 font-semibold"
+                      : "border-transparent text-gray-600 hover:text-[#007BFF] hover:bg-[#E8F1FF]/20"
+                  )}
+                  onClick={() => handleCategoryClick(category.id)}
+                >
+                  {category.name}
+                </Button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -401,10 +468,11 @@ const PublicMenu = () => {
           return (
             <div
               key={category.id}
-              className="mb-8"
+              data-category-id={category.id}
+              className="mb-8 scroll-mt-52"
               ref={(el) => { categoryRefs.current[category.id] = el; }}
             >
-              <h2 className="text-lg font-bold text-gray-900 mb-4 uppercase">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 uppercase sticky top-[168px] bg-gray-50 py-2 -mx-4 px-4 z-10">
                 {category.name}
               </h2>
               <div className="space-y-4">
