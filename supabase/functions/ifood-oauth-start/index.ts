@@ -1,4 +1,4 @@
-// Edge Function para iniciar o fluxo OAuth do iFood
+// Edge Function para iniciar o fluxo OAuth do iFood com redirecionamento automático
 // Endpoint: POST /ifood-oauth-start
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -13,6 +13,26 @@ interface StartOAuthRequest {
   restaurantId: string;
   clientId: string;
   clientSecret: string;
+}
+
+// Função para gerar code_verifier e code_challenge (PKCE)
+function generateCodeVerifier(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 }
 
 serve(async (req) => {
@@ -71,39 +91,21 @@ serve(async (req) => {
       throw new Error('Unauthorized: You are not the owner of this restaurant');
     }
 
-    // Chamar API do iFood para gerar userCode
-    const ifoodResponse = await fetch(
-      `https://merchant-api.ifood.com.br/authentication/v1.0/oauth/userCode?clientId=${clientId}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    );
+    // Gerar PKCE code_verifier e code_challenge
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-    if (!ifoodResponse.ok) {
-      const errorText = await ifoodResponse.text();
-      throw new Error(`iFood API error: ${ifoodResponse.status} - ${errorText}`);
-    }
+    // URL de callback (ajuste conforme seu domínio)
+    const callbackUrl = `${Deno.env.get('APP_URL') || 'http://localhost:5173'}/ifood-callback`;
 
-    const ifoodData = await ifoodResponse.json();
-
-    // Calcular quando o userCode expira
-    const userCodeExpiresAt = new Date(Date.now() + (ifoodData.expiresIn || 600) * 1000);
-
-    // Salvar ou atualizar integração no banco
+    // Salvar code_verifier e credenciais no banco (temporário até completar OAuth)
     const { data: integration, error: integrationError } = await supabaseClient
       .from('ifood_integrations')
       .upsert({
         restaurant_id: restaurantId,
         client_id: clientId,
         client_secret: clientSecret,
-        user_code: ifoodData.userCode,
-        authorization_code_verifier: ifoodData.authorizationCodeVerifier,
-        verification_url: ifoodData.verificationUrl,
-        verification_url_complete: ifoodData.verificationUrlComplete,
-        user_code_expires_at: userCodeExpiresAt.toISOString(),
+        authorization_code_verifier: codeVerifier,
         is_active: false,
         is_authorized: false,
         updated_at: new Date().toISOString(),
@@ -118,15 +120,21 @@ serve(async (req) => {
       throw new Error('Failed to save integration data');
     }
 
-    // Retornar dados para o frontend
+    // Construir URL de autorização do iFood
+    const authUrl = new URL('https://merchant-api.ifood.com.br/authentication/v1.0/oauth/authorize');
+    authUrl.searchParams.set('client_id', clientId);
+    authUrl.searchParams.set('redirect_uri', callbackUrl);
+    authUrl.searchParams.set('response_type', 'code');
+    authUrl.searchParams.set('code_challenge', codeChallenge);
+    authUrl.searchParams.set('code_challenge_method', 'S256');
+    authUrl.searchParams.set('state', restaurantId); // Para identificar o restaurante no callback
+
+    // Retornar URL de autorização
     return new Response(
       JSON.stringify({
         success: true,
         data: {
-          userCode: ifoodData.userCode,
-          verificationUrl: ifoodData.verificationUrl,
-          verificationUrlComplete: ifoodData.verificationUrlComplete,
-          expiresIn: ifoodData.expiresIn,
+          authorizationUrl: authUrl.toString(),
           integrationId: integration.id,
         },
       }),

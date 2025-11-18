@@ -24,6 +24,7 @@ import DiagnosticMenu from "./pages/DiagnosticMenu";
 import Costs from "./pages/Costs";
 import Customers from "./pages/Customers";
 import IFoodIntegration from "./pages/IFoodIntegration";
+import IFoodCallback from "./pages/IFoodCallback";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/costs" element={<Costs />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/ifood-integration" element={<IFoodIntegration />} />
+            <Route path="/ifood-callback" element={<IFoodCallback />} />
             <Route path="/m/:slug" element={<PublicMenu />} />
             <Route path="/m/:slug/checkout" element={<Checkout />} />
             <Route path="/m/:slug/order/:orderId" element={<OrderConfirmation />} />
