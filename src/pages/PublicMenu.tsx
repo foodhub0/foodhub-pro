@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -59,12 +59,44 @@ const PublicMenu = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [rating, setRating] = useState<number>(0);
+  const [totalRatings, setTotalRatings] = useState<number>(0);
+  const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (slug) {
       loadData();
     }
   }, [slug]);
+
+  // Scroll Spy para sincronizar categorias com scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (searchQuery || selectedCategory) return; // Não aplicar scroll spy durante busca/filtro
+
+      const scrollPosition = window.scrollY + 300; // Offset para ativar mais cedo
+
+      // Encontrar qual categoria está visível
+      for (const category of categories) {
+        const element = categoryRefs.current[category.id];
+        if (element) {
+          const { offsetTop, offsetHeight } = element;
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            // Scroll automático da tab
+            const tabButton = document.querySelector(`[data-category="${category.id}"]`);
+            if (tabButton && tabsRef.current) {
+              tabButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+            return;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [categories, searchQuery, selectedCategory]);
 
   const loadData = async () => {
     const { data: restaurantData } = await supabase
@@ -80,22 +112,39 @@ const PublicMenu = () => {
 
     setRestaurant(restaurantData);
 
+    // Carregar categorias ativas
     const { data: categoriesData } = await supabase
       .from("categories")
       .select("*")
       .eq("restaurant_id", restaurantData.id)
+      .eq("is_active", true)
       .order("display_order");
 
     setCategories(categoriesData || []);
 
+    // Carregar produtos ativos
     const { data: productsData } = await supabase
       .from("products")
       .select("*")
       .eq("restaurant_id", restaurantData.id)
-      .eq("is_available", true)
+      .eq("is_active", true)
       .order("name");
 
     setProducts(productsData || []);
+
+    // Carregar avaliações reais
+    const { data: ratingsData } = await supabase
+      .from("reviews")
+      .select("rating")
+      .eq("restaurant_id", restaurantData.id)
+      .eq("is_approved", true);
+
+    if (ratingsData && ratingsData.length > 0) {
+      const avgRating = ratingsData.reduce((sum, r) => sum + r.rating, 0) / ratingsData.length;
+      setRating(avgRating);
+      setTotalRatings(ratingsData.length);
+    }
+
     setLoading(false);
   };
 
@@ -121,8 +170,20 @@ const PublicMenu = () => {
     }).format(value);
   };
 
-  const getRating = () => "5,0";
-  const getTotalRatings = () => "10.000";
+  const handleCategoryClick = (categoryId: string | null) => {
+    if (categoryId === null) {
+      setSelectedCategory(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setSelectedCategory(categoryId);
+      const element = categoryRefs.current[categoryId];
+      if (element) {
+        const offset = 180; // Altura do header fixo
+        const elementPosition = element.offsetTop - offset;
+        window.scrollTo({ top: elementPosition, behavior: 'smooth' });
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -180,15 +241,17 @@ const PublicMenu = () => {
               </h1>
 
               {/* Rating */}
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold text-gray-900">{getRating()}</span>
-                  <span className="text-sm text-gray-500">
-                    ({getTotalRatings()} avaliações)
-                  </span>
+              {totalRatings > 0 && (
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <span className="font-semibold text-gray-900">{rating.toFixed(1)}</span>
+                    <span className="text-sm text-gray-500">
+                      ({totalRatings} {totalRatings === 1 ? 'avaliação' : 'avaliações'})
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Info */}
               <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
@@ -255,17 +318,18 @@ const PublicMenu = () => {
         </div>
 
         {/* Tabs de Categorias */}
-        <div className="overflow-x-auto scrollbar-hide border-t">
+        <div className="overflow-x-auto scrollbar-hide border-t" ref={tabsRef}>
           <div className="flex gap-1 px-4 min-w-max">
             <Button
               variant="ghost"
+              data-category="all"
               className={cn(
                 "rounded-none border-b-2 px-4 py-3 font-medium transition-colors whitespace-nowrap",
                 !selectedCategory
                   ? "border-blue-600 text-blue-600"
                   : "border-transparent text-gray-600 hover:text-gray-900"
               )}
-              onClick={() => setSelectedCategory(null)}
+              onClick={() => handleCategoryClick(null)}
             >
               Todos
             </Button>
@@ -273,13 +337,14 @@ const PublicMenu = () => {
               <Button
                 key={category.id}
                 variant="ghost"
+                data-category={category.id}
                 className={cn(
                   "rounded-none border-b-2 px-4 py-3 font-medium transition-colors whitespace-nowrap",
                   selectedCategory === category.id
                     ? "border-blue-600 text-blue-600"
                     : "border-transparent text-gray-600 hover:text-gray-900"
                 )}
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => handleCategoryClick(category.id)}
               >
                 {category.name}
               </Button>
@@ -334,7 +399,11 @@ const PublicMenu = () => {
           if (selectedCategory && selectedCategory !== category.id) return null;
 
           return (
-            <div key={category.id} className="mb-8">
+            <div
+              key={category.id}
+              className="mb-8"
+              ref={(el) => { categoryRefs.current[category.id] = el; }}
+            >
               <h2 className="text-lg font-bold text-gray-900 mb-4 uppercase">
                 {category.name}
               </h2>

@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Clock, Package, Truck, Home } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { CheckCircle2, Clock, Package, Truck, Home, Star } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Order {
   id: string;
@@ -26,9 +29,15 @@ interface Restaurant {
 const OrderConfirmation = () => {
   const { slug, orderId } = useParams<{ slug: string; orderId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [order, setOrder] = useState<Order | null>(null);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     loadOrder();
@@ -57,9 +66,66 @@ const OrderConfirmation = () => {
       if (restaurantData) {
         setRestaurant(restaurantData);
       }
+
+      // Verificar se já existe avaliação para este pedido
+      const { data: reviewData } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('order_id', orderId)
+        .maybeSingle();
+
+      if (reviewData) {
+        setHasReviewed(true);
+      }
     }
 
     setLoading(false);
+  };
+
+  const handleSubmitReview = async () => {
+    if (rating === 0) {
+      toast({
+        title: 'Avaliação obrigatória',
+        description: 'Por favor, selecione uma nota de 1 a 5 estrelas',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!order || !restaurant) return;
+
+    setSubmittingReview(true);
+
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .insert({
+          restaurant_id: order.restaurant_id,
+          order_id: order.id,
+          customer_name: order.customer_name,
+          customer_email: order.customer_email || null,
+          rating,
+          comment: comment.trim() || null,
+          is_approved: true,
+        });
+
+      if (error) throw error;
+
+      setHasReviewed(true);
+      toast({
+        title: 'Avaliação enviada!',
+        description: 'Obrigado pelo seu feedback!',
+      });
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast({
+        title: 'Erro ao enviar avaliação',
+        description: 'Tente novamente mais tarde',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -225,6 +291,98 @@ const OrderConfirmation = () => {
             </div>
           </div>
         </Card>
+
+        {/* Review Form */}
+        {!hasReviewed && ['delivered', 'completed', 'confirmed', 'ready'].includes(order.status) && (
+          <Card className="p-6 bg-gradient-to-br from-yellow-50 to-white border-2 border-yellow-200">
+            <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+              <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+              Avalie seu pedido
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Sua opinião é muito importante para nós!
+            </p>
+
+            <div className="space-y-4">
+              {/* Star Rating */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">
+                  Como foi sua experiência?
+                </Label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoveredRating(star)}
+                      onMouseLeave={() => setHoveredRating(0)}
+                      className="transition-transform hover:scale-110 focus:outline-none"
+                    >
+                      <Star
+                        className={`h-10 w-10 transition-colors ${
+                          star <= (hoveredRating || rating)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                {rating > 0 && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    {rating === 1 && 'Péssimo'}
+                    {rating === 2 && 'Ruim'}
+                    {rating === 3 && 'Regular'}
+                    {rating === 4 && 'Bom'}
+                    {rating === 5 && 'Excelente'}
+                  </p>
+                )}
+              </div>
+
+              {/* Comment */}
+              <div>
+                <Label htmlFor="comment" className="text-sm font-semibold mb-2 block">
+                  Comentário (opcional)
+                </Label>
+                <Textarea
+                  id="comment"
+                  placeholder="Conte-nos mais sobre sua experiência..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                onClick={handleSubmitReview}
+                disabled={submittingReview || rating === 0}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold"
+              >
+                {submittingReview ? 'Enviando...' : 'Enviar Avaliação'}
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Thank You Message */}
+        {hasReviewed && (
+          <Card className="p-6 bg-gradient-to-br from-green-50 to-white border-2 border-green-200">
+            <div className="text-center space-y-2">
+              <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="font-bold text-lg text-green-800">
+                Obrigado pela sua avaliação!
+              </h3>
+              <p className="text-sm text-gray-600">
+                Seu feedback nos ajuda a melhorar cada vez mais
+              </p>
+            </div>
+          </Card>
+        )}
 
         {/* Contact Info */}
         {restaurant.phone && (
