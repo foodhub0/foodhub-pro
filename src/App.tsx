@@ -7,7 +7,7 @@ import { CartProvider } from "./contexts/CartContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/DashboardNew";
 import Setup from "./pages/Setup";
 import Restaurant from "./pages/Restaurant";
 import Categories from "./pages/Categories";

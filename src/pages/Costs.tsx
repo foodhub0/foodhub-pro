@@ -10,6 +10,7 @@ import {
   Grid3x3,
   DollarSign,
   TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import IngredientsModule from "@/components/costs/IngredientsModule";
@@ -21,9 +22,10 @@ import CombosModule from "@/components/costs/CombosModule";
 import FixedCostsModule from "@/components/costs/FixedCostsModule";
 import VariableCostsModule from "@/components/costs/VariableCostsModule";
 import PriceCalculator from "@/components/costs/PriceCalculator";
+import CostsDashboard from "@/components/costs/CostsDashboard";
 
 const Costs = () => {
-  const [activeTab, setActiveTab] = useState("ingredients");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
     <Layout>
@@ -36,7 +38,12 @@ const Costs = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-9 gap-2 h-auto p-2 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-10 gap-2 h-auto p-2 bg-muted/50">
+          <TabsTrigger value="dashboard" className="flex flex-col items-center gap-1 py-3">
+            <BarChart3 className="h-4 w-4" />
+            <span className="text-xs">Dashboard</span>
+          </TabsTrigger>
+
           <TabsTrigger value="ingredients" className="flex flex-col items-center gap-1 py-3">
             <Package className="h-4 w-4" />
             <span className="text-xs">Insumos</span>
@@ -84,6 +91,10 @@ const Costs = () => {
         </TabsList>
 
         <div className="mt-6">
+          <TabsContent value="dashboard" className="space-y-4">
+            <CostsDashboard />
+          </TabsContent>
+
           <TabsContent value="ingredients" className="space-y-4">
             <IngredientsModule />
           </TabsContent>
