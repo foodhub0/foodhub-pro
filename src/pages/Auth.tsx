@@ -32,30 +32,43 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const redirectUrl = `${window.location.origin}/dashboard`;
+    try {
+      // Chamar Edge Function para criar owner
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    });
+      const response = await fetch(`${supabaseUrl}/functions/v1/signup-owner`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          name: email.split("@")[0],
+        }),
+      });
 
-    setLoading(false);
+      const data = await response.json();
 
-    if (error) {
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Erro ao criar conta");
+      }
+
+      toast({
+        title: "Conta criada com sucesso!",
+        description: "Você é o proprietário do sistema. Faça login para continuar.",
+      });
+      setPassword("");
+    } catch (error: any) {
       toast({
         title: "Erro ao criar conta",
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Faça login para continuar.",
-      });
-      setPassword("");
+    } finally {
+      setLoading(false);
     }
   };
 

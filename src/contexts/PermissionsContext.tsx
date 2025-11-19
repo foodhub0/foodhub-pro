@@ -39,7 +39,9 @@ interface PermissionsContextType {
   isOwner: () => boolean;
   isManager: () => boolean;
   isFinancial: () => boolean;
+  isMarketing: () => boolean;
   isWaiter: () => boolean;
+  isReception: () => boolean;
   isCashier: () => boolean;
   isKitchen: () => boolean;
   hasRole: (roleName: string) => boolean;
@@ -202,7 +204,9 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
   const isOwner = (): boolean => role?.name === 'owner';
   const isManager = (): boolean => role?.name === 'manager';
   const isFinancial = (): boolean => role?.name === 'financial';
+  const isMarketing = (): boolean => role?.name === 'marketing';
   const isWaiter = (): boolean => role?.name === 'waiter';
+  const isReception = (): boolean => role?.name === 'reception';
   const isCashier = (): boolean => role?.name === 'cashier';
   const isKitchen = (): boolean => role?.name === 'kitchen';
 
@@ -228,7 +232,9 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
         isOwner,
         isManager,
         isFinancial,
+        isMarketing,
         isWaiter,
+        isReception,
         isCashier,
         isKitchen,
         hasRole,

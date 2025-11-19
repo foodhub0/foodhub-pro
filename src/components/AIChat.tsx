@@ -38,44 +38,21 @@ const AIChat = () => {
     setIsLoading(true);
 
     try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (!apiKey) {
-        throw new Error("API key não configurada");
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error("Configuração do Supabase não encontrada");
       }
 
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch(`${supabaseUrl}/functions/v1/ai-chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
+          "Authorization": `Bearer ${supabaseAnonKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
           messages: [
-            {
-              role: "system",
-              content: `Você é um assistente especializado em gestão de delivery e restaurantes, integrado ao sistema Food Hub.
-
-Suas especialidades incluem:
-- Análise de custos e precificação
-- Estratégias para aumentar vendas
-- Otimização de operações de delivery
-- Gestão de estoque e ingredientes
-- Criação de combos e promoções
-- Análise de métricas e KPIs
-- Dicas de marketing para delivery
-- Gestão de cardápio
-
-Sempre responda de forma:
-- Profissional mas amigável
-- Objetiva e prática
-- Com exemplos quando possível
-- Focada em resultados para o negócio
-- Em português brasileiro
-
-Se o usuário pedir insights, forneça análises baseadas em boas práticas do setor de delivery.`
-            },
             ...messages.map(msg => ({
               role: msg.role,
               content: msg.content
@@ -85,20 +62,18 @@ Se o usuário pedir insights, forneça análises baseadas em boas práticas do s
               content: input
             }
           ],
-          temperature: 0.7,
-          max_tokens: 500,
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error?.message || "Erro ao conectar com a IA");
+        throw new Error(error.error || "Erro ao conectar com a IA");
       }
 
       const data = await response.json();
       const assistantMessage: Message = {
         role: "assistant",
-        content: data.choices[0].message.content,
+        content: data.message,
       };
 
       setMessages(prev => [...prev, assistantMessage]);

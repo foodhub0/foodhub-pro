@@ -17,6 +17,11 @@ dist-ssr
 .env.local
 .env.*.local
 
+# OpenAI API Key - NUNCA COMMITAR!
+OPENAI_KEY.txt
+*_KEY.txt
+*.key
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

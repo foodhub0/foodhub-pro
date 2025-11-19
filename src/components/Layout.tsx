@@ -23,6 +23,8 @@ import {
   BarChart3,
   Rocket,
   Building2,
+  ClipboardList,
+  DoorOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -42,7 +44,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [restaurantName, setRestaurantName] = useState("FoodHub");
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
-  const { isOwner, can } = usePermissions();
+  const { isOwner, isWaiter, isReception, isFinancial, isMarketing, can, role } = usePermissions();
 
   useEffect(() => {
     loadRestaurant();
@@ -70,28 +72,94 @@ const Layout = ({ children }: LayoutProps) => {
     navigate("/auth");
   };
 
-  // Menu items dinâmicos baseados em permissões
-  const baseMenuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: ShoppingBag, label: "Pedidos", path: "/orders" },
-    { icon: UserCircle, label: "Clientes", path: "/customers" },
-    { icon: Store, label: "Meu Restaurante", path: "/restaurant" },
-    { icon: Utensils, label: "Produtos", path: "/products" },
-    { icon: Table2, label: "Mesas", path: "/tables" },
-    { icon: Calculator, label: "Custos", path: "/costs" },
-    { icon: Bike, label: "Entregadores", path: "/couriers" },
-    { icon: Eye, label: "Cardápio", path: "/menu-preview" },
-    { icon: Plug, label: "Integração iFood", path: "/ifood-integration" },
-    { icon: BarChart3, label: "Analytics", path: "/analytics" },
-    { icon: Rocket, label: "Potencializar Negócio", path: "/boost-business" },
-  ];
+  // Menu items dinâmicos baseados em permissões e roles
+  const getMenuItems = () => {
+    const items = [];
 
-  // Adicionar itens condicionais baseados em permissões
-  const menuItems = [
-    ...(isOwner() ? [{ icon: Building2, label: "Dashboard da Marca", path: "/brand-dashboard" }] : []),
-    ...baseMenuItems,
-    ...(can('read', 'users') ? [{ icon: Users, label: "Usuários", path: "/users" }] : []),
-  ];
+    // Dashboard da Marca (apenas Owner)
+    if (isOwner()) {
+      items.push({ icon: Building2, label: "Dashboard da Marca", path: "/brand-dashboard" });
+    }
+
+    // Dashboard (todos exceto Garçom)
+    if (!isWaiter()) {
+      items.push({ icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" });
+    }
+
+    // Pedidos do Garçom (apenas Garçom)
+    if (isWaiter()) {
+      items.push({ icon: ClipboardList, label: "Pedidos", path: "/waiter-orders" });
+    }
+
+    // Recepção (apenas Recepção)
+    if (isReception()) {
+      items.push({ icon: DoorOpen, label: "Recepção", path: "/reception" });
+    }
+
+    // Pedidos (todos exceto Garçom puro)
+    if (!isWaiter() || can('update', 'orders')) {
+      items.push({ icon: ShoppingBag, label: "Pedidos", path: "/orders" });
+    }
+
+    // Clientes
+    if (can('read', 'customers')) {
+      items.push({ icon: UserCircle, label: "Clientes", path: "/customers" });
+    }
+
+    // Meu Restaurante (Manager, Owner)
+    if (can('read', 'settings')) {
+      items.push({ icon: Store, label: "Meu Restaurante", path: "/restaurant" });
+    }
+
+    // Produtos (Manager, Owner)
+    if (can('read', 'products')) {
+      items.push({ icon: Utensils, label: "Produtos", path: "/products" });
+    }
+
+    // Mesas
+    if (can('read', 'tables')) {
+      items.push({ icon: Table2, label: "Mesas", path: "/tables" });
+    }
+
+    // Custos (Financial, Manager, Owner)
+    if (can('read', 'costs')) {
+      items.push({ icon: Calculator, label: "Custos", path: "/costs" });
+    }
+
+    // Entregadores (Manager, Owner)
+    if (can('read', 'settings')) {
+      items.push({ icon: Bike, label: "Entregadores", path: "/couriers" });
+    }
+
+    // Cardápio (Manager, Owner)
+    if (can('read', 'products')) {
+      items.push({ icon: Eye, label: "Cardápio", path: "/menu-preview" });
+    }
+
+    // Integração iFood (Manager, Owner)
+    if (can('read', 'settings')) {
+      items.push({ icon: Plug, label: "Integração iFood", path: "/ifood-integration" });
+    }
+
+    // Analytics (Financial, Marketing, Manager, Owner)
+    if (can('read', 'analytics') || isFinancial() || isMarketing()) {
+      items.push({ icon: BarChart3, label: "Analytics", path: "/analytics" });
+    }
+
+    // Potencializar Negócio (Marketing, Manager, Owner)
+    if (isMarketing() || can('read', 'settings')) {
+      items.push({ icon: Rocket, label: "Potencializar Negócio", path: "/boost-business" });
+    }
+
+    // Usuários (Manager, Owner)
+    if (can('read', 'users')) {
+      items.push({ icon: Users, label: "Usuários", path: "/users" });
+    }
+
+    return items;
+  };
+
+  const menuItems = getMenuItems();
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
