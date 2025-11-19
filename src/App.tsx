@@ -35,6 +35,7 @@ import NewUser from "./pages/NewUser";
 import BrandDashboard from "./pages/BrandDashboard";
 import WaiterOrders from "./pages/WaiterOrders";
 import Reception from "./pages/Reception";
+import AddonGroups from "./pages/AddonGroups";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
                   <Route path="/restaurant" element={<Restaurant />} />
                   <Route path="/categories" element={<Categories />} />
                   <Route path="/products" element={<Products />} />
+                  <Route path="/addon-groups" element={<AddonGroups />} />
                   <Route path="/menu-preview" element={<MenuPreview />} />
                   <Route path="/tables" element={<Tables />} />
                   <Route path="/orders" element={<OrdersKanban />} />
