@@ -50,7 +50,6 @@ const Auth = () => {
         throw error;
       }
 
-      // Se foi criado com sucesso
       if (data.user) {
         // 2. Processar usuário como owner (se for o primeiro)
         const { data: processResult, error: processError } = await supabase.rpc(
@@ -66,17 +65,38 @@ const Auth = () => {
           console.error("Erro ao processar owner:", processError);
         }
 
-        // Se processou como owner, mostrar mensagem especial
         const isOwner = processResult?.is_owner === true;
+
+        // 3. Se é owner, atualizar metadata ANTES de fazer login
+        if (isOwner && processResult) {
+          const { error: updateError } = await supabase.auth.updateUser({
+            data: {
+              name: userName,
+              role_id: processResult.role_id,
+              role_name: processResult.role_name,
+              role_color: processResult.role_color,
+              brand_id: processResult.brand_id,
+              restaurant_id: processResult.restaurant_id,
+              is_active: true,
+            },
+          });
+
+          if (updateError) {
+            console.error("Erro ao atualizar metadata:", updateError);
+          }
+
+          // Aguardar um pouco para garantir que o metadata foi atualizado
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
 
         toast({
           title: "Conta criada com sucesso!",
           description: isOwner
-            ? "Você é o proprietário do sistema! Fazendo login..."
-            : "Conta criada. Fazendo login...",
+            ? "Você é o proprietário do sistema! Redirecionando..."
+            : "Conta criada. Redirecionando...",
         });
 
-        // 3. Fazer login automaticamente
+        // 4. Fazer login
         setTimeout(async () => {
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email,
@@ -84,24 +104,12 @@ const Auth = () => {
           });
 
           if (!signInError) {
-            // Se é owner, atualizar metadata do usuário
-            if (isOwner && processResult) {
-              await supabase.auth.updateUser({
-                data: {
-                  name: userName,
-                  role_id: processResult.role_id,
-                  role_name: processResult.role_name,
-                  role_color: processResult.role_color,
-                  brand_id: processResult.brand_id,
-                  restaurant_id: processResult.restaurant_id,
-                  is_active: true,
-                },
-              });
-            }
-
-            navigate("/dashboard");
+            // Aguardar mais um pouco para contextos carregarem
+            setTimeout(() => {
+              navigate("/dashboard");
+            }, 500);
           }
-        }, 1500);
+        }, 1000);
 
         setPassword("");
       }
@@ -161,7 +169,6 @@ const Auth = () => {
       });
       setLoading(false);
     }
-    // Não precisa setLoading(false) aqui pois o usuário será redirecionado
   };
 
   return (
