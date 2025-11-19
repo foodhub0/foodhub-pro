@@ -161,7 +161,7 @@ CREATE POLICY "Users can view brands they belong to"
   ON public.brands FOR SELECT
   TO authenticated
   USING (
-    id = (SELECT (metadata->>'brand_id')::uuid FROM auth.users WHERE id = auth.uid())
+    id = (SELECT (raw_user_meta_data->>'brand_id')::uuid FROM auth.users WHERE id = auth.uid())
     OR owner_id = auth.uid()
   );
 
@@ -186,7 +186,7 @@ CREATE POLICY "Users can view restaurants of their brand"
   ON public.restaurants FOR SELECT
   TO authenticated
   USING (
-    brand_id = (SELECT (metadata->>'brand_id')::uuid FROM auth.users WHERE id = auth.uid())
+    brand_id = (SELECT (raw_user_meta_data->>'brand_id')::uuid FROM auth.users WHERE id = auth.uid())
     OR user_id = auth.uid()
   );
 
@@ -229,9 +229,9 @@ CREATE POLICY "Owners can view all overrides in their brand"
     EXISTS (
       SELECT 1 FROM auth.users
       WHERE id = auth.uid()
-      AND (metadata->>'role_name') = 'owner'
-      AND (metadata->>'brand_id') = (
-        SELECT metadata->>'brand_id' FROM auth.users WHERE id = user_permission_overrides.user_id
+      AND (raw_user_meta_data->>'role_name') = 'owner'
+      AND (raw_user_meta_data->>'brand_id') = (
+        SELECT raw_user_meta_data->>'brand_id' FROM auth.users WHERE id = user_permission_overrides.user_id
       )
     )
   );
@@ -243,7 +243,7 @@ CREATE POLICY "Owners can manage overrides"
     EXISTS (
       SELECT 1 FROM auth.users
       WHERE id = auth.uid()
-      AND (metadata->>'role_name') = 'owner'
+      AND (raw_user_meta_data->>'role_name') = 'owner'
     )
   );
 
@@ -254,7 +254,7 @@ CREATE POLICY "Users can view logs of their brand"
   ON public.audit_logs FOR SELECT
   TO authenticated
   USING (
-    brand_id = (SELECT (metadata->>'brand_id')::uuid FROM auth.users WHERE id = auth.uid())
+    brand_id = (SELECT (raw_user_meta_data->>'brand_id')::uuid FROM auth.users WHERE id = auth.uid())
   );
 
 CREATE POLICY "Anyone can insert audit logs"
