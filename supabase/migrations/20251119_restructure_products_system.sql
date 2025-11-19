@@ -67,71 +67,86 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS has_sizes BOOLEAN DEFAULT false;
 -- PASSO 3: MIGRAR DADOS EXISTENTES
 -- ============================================================================
 
--- 3.1 Migrar product_variations para product_sizes
+-- 3.1 Migrar product_variations para product_sizes (se a tabela existir)
 -- Converter price_modifier para preço absoluto (base_price + price_modifier)
-INSERT INTO product_sizes (product_id, name, price, display_order, created_at)
-SELECT
-  pv.product_id,
-  pv.name,
-  p.base_price + pv.price_modifier AS price, -- Preço absoluto
-  pv.display_order,
-  pv.created_at
-FROM product_variations pv
-JOIN products p ON p.id = pv.product_id
-WHERE NOT EXISTS (
-  SELECT 1 FROM product_sizes ps WHERE ps.product_id = pv.product_id AND ps.name = pv.name
-);
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'product_variations') THEN
+    INSERT INTO product_sizes (product_id, name, price, display_order, created_at)
+    SELECT
+      pv.product_id,
+      pv.name,
+      p.base_price + pv.price_modifier AS price, -- Preço absoluto
+      pv.display_order,
+      pv.created_at
+    FROM product_variations pv
+    JOIN products p ON p.id = pv.product_id
+    WHERE NOT EXISTS (
+      SELECT 1 FROM product_sizes ps WHERE ps.product_id = pv.product_id AND ps.name = pv.name
+    );
+  END IF;
+END $$;
 
 -- Marcar produtos que têm tamanhos
 UPDATE products SET has_sizes = true
 WHERE id IN (SELECT DISTINCT product_id FROM product_sizes);
 
 -- 3.2 Criar grupo padrão "Adicionais Gerais" por restaurante
--- (para migrar additionals existentes)
+-- (para migrar additionals existentes, se a tabela existir)
 DO $$
 DECLARE
   r RECORD;
   group_id UUID;
+  additionals_exists BOOLEAN;
+  product_additionals_exists BOOLEAN;
 BEGIN
-  FOR r IN SELECT DISTINCT restaurant_id FROM additionals LOOP
-    -- Criar grupo "Adicionais Gerais"
-    INSERT INTO product_addon_groups (restaurant_id, name, description, is_active)
-    VALUES (
-      r.restaurant_id,
-      'Adicionais Gerais',
-      'Adicionais migrados do sistema anterior',
-      true
-    )
-    RETURNING id INTO group_id;
+  -- Verificar se as tabelas existem
+  SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'additionals') INTO additionals_exists;
+  SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'product_additionals') INTO product_additionals_exists;
 
-    -- Migrar additionals para addon_group_items
-    INSERT INTO addon_group_items (addon_group_id, name, price, display_order)
-    SELECT
-      group_id,
-      a.name,
-      a.price,
-      ROW_NUMBER() OVER (ORDER BY a.created_at) - 1
-    FROM additionals a
-    WHERE a.restaurant_id = r.restaurant_id;
+  IF additionals_exists THEN
+    FOR r IN SELECT DISTINCT restaurant_id FROM additionals LOOP
+      -- Criar grupo "Adicionais Gerais"
+      INSERT INTO product_addon_groups (restaurant_id, name, description, is_active)
+      VALUES (
+        r.restaurant_id,
+        'Adicionais Gerais',
+        'Adicionais migrados do sistema anterior',
+        true
+      )
+      RETURNING id INTO group_id;
 
-    -- Criar vínculos produto <-> grupo para produtos que usavam esses additionals
-    INSERT INTO product_addon_group_links (
-      product_id,
-      addon_group_id,
-      is_required,
-      max_quantity,
-      display_order
-    )
-    SELECT DISTINCT
-      pa.product_id,
-      group_id,
-      pa.is_required,
-      pa.max_quantity,
-      0
-    FROM product_additionals pa
-    JOIN additionals a ON a.id = pa.additional_id
-    WHERE a.restaurant_id = r.restaurant_id;
-  END LOOP;
+      -- Migrar additionals para addon_group_items
+      INSERT INTO addon_group_items (addon_group_id, name, price, display_order)
+      SELECT
+        group_id,
+        a.name,
+        a.price,
+        ROW_NUMBER() OVER (ORDER BY a.created_at) - 1
+      FROM additionals a
+      WHERE a.restaurant_id = r.restaurant_id;
+
+      -- Criar vínculos produto <-> grupo para produtos que usavam esses additionals
+      IF product_additionals_exists THEN
+        INSERT INTO product_addon_group_links (
+          product_id,
+          addon_group_id,
+          is_required,
+          max_quantity,
+          display_order
+        )
+        SELECT DISTINCT
+          pa.product_id,
+          group_id,
+          pa.is_required,
+          pa.max_quantity,
+          0
+        FROM product_additionals pa
+        JOIN additionals a ON a.id = pa.additional_id
+        WHERE a.restaurant_id = r.restaurant_id;
+      END IF;
+    END LOOP;
+  END IF;
 END $$;
 
 -- ============================================================================
