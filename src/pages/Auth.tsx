@@ -33,38 +33,83 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Chamar Edge Function para criar owner
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const userName = email.split("@")[0];
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/signup-owner`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabaseAnonKey}`,
+      // 1. Signup no Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: userName,
+          },
         },
-        body: JSON.stringify({
-          email,
-          password,
-          name: email.split("@")[0],
-        }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Erro ao criar conta");
+      if (error) {
+        throw error;
       }
 
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Você é o proprietário do sistema. Faça login para continuar.",
-      });
-      setPassword("");
+      // Se foi criado com sucesso
+      if (data.user) {
+        // 2. Processar usuário como owner (se for o primeiro)
+        const { data: processResult, error: processError } = await supabase.rpc(
+          'process_new_user_as_owner',
+          {
+            user_id: data.user.id,
+            user_email: email,
+            user_name: userName,
+          }
+        );
+
+        if (processError) {
+          console.error("Erro ao processar owner:", processError);
+        }
+
+        // Se processou como owner, mostrar mensagem especial
+        const isOwner = processResult?.is_owner === true;
+
+        toast({
+          title: "Conta criada com sucesso!",
+          description: isOwner
+            ? "Você é o proprietário do sistema! Fazendo login..."
+            : "Conta criada. Fazendo login...",
+        });
+
+        // 3. Fazer login automaticamente
+        setTimeout(async () => {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (!signInError) {
+            // Se é owner, atualizar metadata do usuário
+            if (isOwner && processResult) {
+              await supabase.auth.updateUser({
+                data: {
+                  name: userName,
+                  role_id: processResult.role_id,
+                  role_name: processResult.role_name,
+                  role_color: processResult.role_color,
+                  brand_id: processResult.brand_id,
+                  restaurant_id: processResult.restaurant_id,
+                  is_active: true,
+                },
+              });
+            }
+
+            navigate("/dashboard");
+          }
+        }, 1500);
+
+        setPassword("");
+      }
     } catch (error: any) {
+      console.error("Erro no signup:", error);
       toast({
         title: "Erro ao criar conta",
-        description: error.message,
+        description: error.message || "Erro desconhecido. Tente novamente.",
         variant: "destructive",
       });
     } finally {
