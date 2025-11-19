@@ -33,6 +33,8 @@ import BoostBusiness from "./pages/BoostBusiness";
 import Users from "./pages/Users";
 import NewUser from "./pages/NewUser";
 import BrandDashboard from "./pages/BrandDashboard";
+import WaiterOrders from "./pages/WaiterOrders";
+import Reception from "./pages/Reception";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +66,26 @@ const App = () => (
                   <Route path="/ifood-callback" element={<IFoodCallback />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/boost-business" element={<BoostBusiness />} />
+
+                  {/* Waiter Routes */}
+                  <Route
+                    path="/waiter-orders"
+                    element={
+                      <RoleGuard roles={['waiter', 'manager', 'owner']}>
+                        <WaiterOrders />
+                      </RoleGuard>
+                    }
+                  />
+
+                  {/* Reception Routes */}
+                  <Route
+                    path="/reception"
+                    element={
+                      <RoleGuard roles={['reception', 'manager', 'owner']}>
+                        <Reception />
+                      </RoleGuard>
+                    }
+                  />
 
                   {/* RBAC Routes */}
                   <Route
