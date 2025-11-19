@@ -25,6 +25,7 @@ import {
   Building2,
   ClipboardList,
   DoorOpen,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -114,6 +115,11 @@ const Layout = ({ children }: LayoutProps) => {
     // Produtos (Manager, Owner)
     if (can('read', 'products')) {
       items.push({ icon: Utensils, label: "Produtos", path: "/products" });
+    }
+
+    // Grupos de Adicionais (Manager, Owner)
+    if (can('read', 'products')) {
+      items.push({ icon: Layers, label: "Grupos de Adicionais", path: "/addon-groups" });
     }
 
     // Mesas
