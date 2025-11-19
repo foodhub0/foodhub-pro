@@ -20,6 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Plug,
+  BarChart3,
+  Rocket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -75,6 +77,8 @@ const Layout = ({ children }: LayoutProps) => {
     { icon: Bike, label: "Entregadores", path: "/couriers" },
     { icon: Eye, label: "Cardápio", path: "/menu-preview" },
     { icon: Plug, label: "Integração iFood", path: "/ifood-integration" },
+    { icon: BarChart3, label: "Analytics", path: "/analytics" },
+    { icon: Rocket, label: "Potencializar Negócio", path: "/boost-business" },
   ];
 
   return (
