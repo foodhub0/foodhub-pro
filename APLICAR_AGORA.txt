@@ -1,0 +1,61 @@
+═══════════════════════════════════════════════════════════════
+  APLICAR MIGRATION RBAC - PASSO A PASSO DEFINITIVO
+═══════════════════════════════════════════════════════════════
+
+⏱️  TEMPO TOTAL: 2 MINUTOS
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PASSO 1: ABRIR O SQL EDITOR (10 segundos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Clique neste link (abre o SQL Editor):
+
+👉 https://supabase.com/dashboard/project/wisikawnpzrrfzqutatl/sql/new
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PASSO 2: COPIAR O SQL (30 segundos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Execute este comando no terminal:
+
+    cat supabase/migrations/20251119_create_rbac_system.sql
+
+Selecione TODO o texto que aparecer e copie (Ctrl+C)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PASSO 3: COLAR E EXECUTAR (30 segundos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Volte para o SQL Editor do Supabase
+2. Cole o SQL (Ctrl+V)
+3. Clique no botão "RUN" (canto superior direito)
+4. Aguarde ~15 segundos
+
+✅ Você verá "Success" quando terminar!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PASSO 4: CONFIRMAR (30 segundos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cole este SQL no mesmo editor e clique RUN:
+
+    SELECT COUNT(*) FROM roles;
+
+Resultado esperado: 6
+
+Se aparecer "6", está TUDO CERTO! ✅
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PRÓXIMO PASSO: DEPLOY DA EDGE FUNCTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Depois de aplicar a migration acima, faça o deploy da função:
+
+👉 Veja instruções em: PROXIMOS_PASSOS.md (PASSO 2)
+
+═══════════════════════════════════════════════════════════════
