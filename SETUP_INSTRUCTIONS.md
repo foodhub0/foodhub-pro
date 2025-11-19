@@ -20,15 +20,30 @@ Ou via Dashboard:
 
 ## 2. Deploy das Edge Functions
 
+**IMPORTANTE:** Certifique-se de que você configurou a chave da OpenAI no passo 1 antes de fazer o deploy!
+
 ```bash
-# Deploy da função de chat IA
+# 1. Deploy da função de chat IA (requer OPENAI_API_KEY configurada)
 supabase functions deploy ai-chat
 
-# Deploy da função de signup
+# 2. Deploy da função de signup (cria primeiro usuário como Owner)
 supabase functions deploy signup-owner
 
-# Deploy da função de criar usuários (admin)
+# 3. Deploy da função de criar usuários (admin) - opcional
 supabase functions deploy create-user-admin
+```
+
+### Verificar Deploy
+
+Após o deploy, verifique se as funções foram deployadas com sucesso:
+
+```bash
+# Listar funções deployadas
+supabase functions list
+
+# Ver logs de uma função específica
+supabase functions logs ai-chat
+supabase functions logs signup-owner
 ```
 
 ## 3. Executar Migrações do Banco de Dados
@@ -118,9 +133,81 @@ VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 VITE_SUPABASE_URL="https://wisikawnpzrrfzqutatl.supabase.co"
 ```
 
+## Troubleshooting
+
+### Erro: "OpenAI API key not configured"
+
+**Causa:** A chave da OpenAI não foi configurada no Supabase Edge Functions.
+
+**Solução:**
+```bash
+# Configurar a chave
+supabase secrets set OPENAI_API_KEY=$(cat OPENAI_KEY.txt | grep '^sk-' | tr -d '\n')
+
+# Fazer redeploy da função
+supabase functions deploy ai-chat
+```
+
+### Erro: "Já existe um proprietário cadastrado"
+
+**Causa:** Já existe um Owner no sistema e você está tentando criar conta via signup público.
+
+**Solução:**
+- Se você é o Owner, faça login normalmente
+- Se você precisa de uma conta, peça ao Owner para criar sua conta em `/users/new`
+- Se você quer resetar o sistema (CUIDADO: apaga tudo):
+  ```sql
+  -- Execute no SQL Editor do Supabase
+  DELETE FROM brands; -- Isso deleta tudo em cascata
+  ```
+
+### Erro: "Failed to bundle the function"
+
+**Causa:** Erro de import ou dependência nas Edge Functions.
+
+**Solução:**
+- ✅ Já corrigido! As funções foram atualizadas para não usar imports compartilhados
+- Faça pull das últimas mudanças: `git pull`
+- Redeploy: `supabase functions deploy ai-chat signup-owner`
+
+### Edge Function não responde
+
+**Verificar:**
+```bash
+# Ver logs em tempo real
+supabase functions logs ai-chat --follow
+
+# Testar função localmente
+supabase functions serve ai-chat
+```
+
+### Banco de dados vazio após migrações
+
+**Causa:** Migrações não foram aplicadas.
+
+**Solução:**
+```bash
+# Verificar status
+supabase db status
+
+# Aplicar migrações
+supabase db push
+
+# Ou executar manualmente no SQL Editor
+```
+
+### Chat IA não funciona
+
+**Checklist:**
+1. ✅ Chave OpenAI configurada? `supabase secrets list`
+2. ✅ Função deployada? `supabase functions list`
+3. ✅ Logs mostram erros? `supabase functions logs ai-chat`
+4. ✅ Variáveis no .env corretas? Verifique VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
+
 ## Suporte
 
 Se tiver problemas:
 1. Verifique os logs das Edge Functions no Supabase Dashboard
 2. Verifique se as migrações foram aplicadas
 3. Confirme que a chave da OpenAI está configurada corretamente
+4. Consulte a seção Troubleshooting acima
