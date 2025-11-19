@@ -168,8 +168,18 @@ ALTER TABLE addon_group_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_addon_group_links ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
--- PASSO 6: CRIAR POLÍTICAS RLS
+-- PASSO 6: CRIAR POLÍTICAS RLS (idempotente)
 -- ============================================================================
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Owners can manage product sizes" ON product_sizes;
+DROP POLICY IF EXISTS "Public can view available sizes" ON product_sizes;
+DROP POLICY IF EXISTS "Owners can manage addon groups" ON product_addon_groups;
+DROP POLICY IF EXISTS "Public can view active addon groups" ON product_addon_groups;
+DROP POLICY IF EXISTS "Owners can manage addon items" ON addon_group_items;
+DROP POLICY IF EXISTS "Public can view available addon items" ON addon_group_items;
+DROP POLICY IF EXISTS "Owners can manage product addon links" ON product_addon_group_links;
+DROP POLICY IF EXISTS "Public can view product addon links" ON product_addon_group_links;
 
 -- 6.1 Product Sizes
 -- Owners podem gerenciar tamanhos de seus produtos
@@ -252,21 +262,25 @@ CREATE INDEX IF NOT EXISTS idx_addon_links_group ON product_addon_group_links(ad
 CREATE INDEX IF NOT EXISTS idx_addon_links_order ON product_addon_group_links(product_id, display_order);
 
 -- ============================================================================
--- PASSO 8: CRIAR TRIGGERS PARA UPDATED_AT
+-- PASSO 8: CRIAR TRIGGERS PARA UPDATED_AT (idempotente)
 -- ============================================================================
 
+DROP TRIGGER IF EXISTS update_product_sizes_updated_at ON product_sizes;
 CREATE TRIGGER update_product_sizes_updated_at
   BEFORE UPDATE ON product_sizes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_addon_groups_updated_at ON product_addon_groups;
 CREATE TRIGGER update_addon_groups_updated_at
   BEFORE UPDATE ON product_addon_groups
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_addon_items_updated_at ON addon_group_items;
 CREATE TRIGGER update_addon_items_updated_at
   BEFORE UPDATE ON addon_group_items
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_addon_links_updated_at ON product_addon_group_links;
 CREATE TRIGGER update_addon_links_updated_at
   BEFORE UPDATE ON product_addon_group_links
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
