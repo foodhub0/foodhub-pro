@@ -33,13 +33,15 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Signup direto - o trigger do banco vai tornar o primeiro usuário em Owner
+      const userName = email.split("@")[0];
+
+      // 1. Signup no Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name: email.split("@")[0],
+            name: userName,
           },
         },
       });
@@ -50,12 +52,31 @@ const Auth = () => {
 
       // Se foi criado com sucesso
       if (data.user) {
+        // 2. Processar usuário como owner (se for o primeiro)
+        const { data: processResult, error: processError } = await supabase.rpc(
+          'process_new_user_as_owner',
+          {
+            user_id: data.user.id,
+            user_email: email,
+            user_name: userName,
+          }
+        );
+
+        if (processError) {
+          console.error("Erro ao processar owner:", processError);
+        }
+
+        // Se processou como owner, mostrar mensagem especial
+        const isOwner = processResult?.is_owner === true;
+
         toast({
           title: "Conta criada com sucesso!",
-          description: "Faça login para continuar.",
+          description: isOwner
+            ? "Você é o proprietário do sistema! Fazendo login..."
+            : "Conta criada. Fazendo login...",
         });
 
-        // Aguardar 1 segundo e tentar fazer login automaticamente
+        // 3. Fazer login automaticamente
         setTimeout(async () => {
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email,
@@ -63,9 +84,24 @@ const Auth = () => {
           });
 
           if (!signInError) {
+            // Se é owner, atualizar metadata do usuário
+            if (isOwner && processResult) {
+              await supabase.auth.updateUser({
+                data: {
+                  name: userName,
+                  role_id: processResult.role_id,
+                  role_name: processResult.role_name,
+                  role_color: processResult.role_color,
+                  brand_id: processResult.brand_id,
+                  restaurant_id: processResult.restaurant_id,
+                  is_active: true,
+                },
+              });
+            }
+
             navigate("/dashboard");
           }
-        }, 1000);
+        }, 1500);
 
         setPassword("");
       }
