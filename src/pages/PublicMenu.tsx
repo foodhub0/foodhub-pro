@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { ProductModal } from "@/components/ProductModal";
 import { CartDrawer } from "@/components/CartDrawer";
+import { FacebookPixel } from "@/components/FacebookPixel";
+import { useTracking } from "@/hooks/useTracking";
 
 interface Product {
   id: string;
@@ -51,6 +53,7 @@ const PublicMenu = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { getItemCount } = useCart();
+  const { trackEvent } = useTracking();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -73,6 +76,16 @@ const PublicMenu = () => {
       loadData();
     }
   }, [slug]);
+
+  // Rastrear page view quando o cardápio carrega
+  useEffect(() => {
+    if (restaurant) {
+      trackEvent({
+        restaurantId: restaurant.id,
+        eventName: 'page_view',
+      });
+    }
+  }, [restaurant, trackEvent]);
 
   // IntersectionObserver para detectar categoria visível (estilo iFood)
   useEffect(() => {
@@ -191,6 +204,17 @@ const PublicMenu = () => {
       });
       return;
     }
+
+    // Rastrear visualização do produto
+    if (restaurant) {
+      trackEvent({
+        restaurantId: restaurant.id,
+        eventName: 'view_content',
+        productId: product.id,
+        eventValue: product.price || product.base_price,
+      });
+    }
+
     setSelectedProduct(product);
     setIsProductModalOpen(true);
   };
@@ -637,6 +661,9 @@ const PublicMenu = () => {
         onOpenChange={setIsCartDrawerOpen}
         restaurantSlug={slug || ""}
       />
+
+      {/* Facebook Pixel Integration */}
+      {restaurant && <FacebookPixel restaurantId={restaurant.id} />}
     </div>
   );
 };

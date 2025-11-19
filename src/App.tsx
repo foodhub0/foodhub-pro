@@ -25,6 +25,8 @@ import Costs from "./pages/Costs";
 import Customers from "./pages/Customers";
 import IFoodIntegration from "./pages/IFoodIntegration";
 import IFoodCallback from "./pages/IFoodCallback";
+import Analytics from "./pages/Analytics";
+import BoostBusiness from "./pages/BoostBusiness";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,8 @@ const App = () => (
             <Route path="/customers" element={<Customers />} />
             <Route path="/ifood-integration" element={<IFoodIntegration />} />
             <Route path="/ifood-callback" element={<IFoodCallback />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/boost-business" element={<BoostBusiness />} />
             <Route path="/m/:slug" element={<PublicMenu />} />
             <Route path="/m/:slug/checkout" element={<Checkout />} />
             <Route path="/m/:slug/order/:orderId" element={<OrderConfirmation />} />

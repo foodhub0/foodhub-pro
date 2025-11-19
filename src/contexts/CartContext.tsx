@@ -1,4 +1,43 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+// Função auxiliar para tracking (sem hook, para usar no contexto)
+const trackAddToCart = async (restaurantId: string, productId: string, value: number) => {
+  try {
+    // Gerar/recuperar session ID
+    let sessionId = localStorage.getItem('tracking_session_id');
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      localStorage.setItem('tracking_session_id', sessionId);
+    }
+
+    // Inserir evento
+    await supabase.from('tracking_events').insert({
+      restaurant_id: restaurantId,
+      event_name: 'add_to_cart',
+      session_id: sessionId,
+      product_id: productId,
+      event_value: value,
+      currency: 'BRL',
+      metadata: {
+        url: window.location.href,
+        user_agent: navigator.userAgent,
+      },
+    });
+
+    // Facebook Pixel
+    if (window.fbq) {
+      window.fbq('track', 'AddToCart', {
+        content_ids: [productId],
+        content_type: 'product',
+        value: value,
+        currency: 'BRL',
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao rastrear add_to_cart:', error);
+  }
+};
 
 export interface CartVariation {
   id: string;
@@ -85,6 +124,11 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
       setItems(prev => [...prev, cartItem]);
       setRestaurantId(newItem.restaurantId);
+
+      // Rastrear evento add_to_cart
+      const variationsTotal = newItem.variations.reduce((sum, v) => sum + v.price, 0);
+      const itemTotal = (newItem.basePrice + variationsTotal) * newItem.quantity;
+      trackAddToCart(newItem.restaurantId, newItem.productId, itemTotal);
     } else {
       // Carrinho de outro restaurante - avisar o usuário
       throw new Error('Você já tem itens de outro restaurante no carrinho');

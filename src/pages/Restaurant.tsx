@@ -35,6 +35,10 @@ const Restaurant = () => {
     delivery_fee: "0",
     delivery_time_estimate: "30",
   });
+  const [pixelConfig, setPixelConfig] = useState({
+    pixel_id: "",
+    is_active: true,
+  });
 
   useEffect(() => {
     loadRestaurant();
@@ -71,8 +75,73 @@ const Restaurant = () => {
         setDeliveryZones(restaurant.delivery_zones);
         setDeliveryMode("zones");
       }
+
+      // Carregar configuração do Facebook Pixel
+      const { data: pixelData } = await supabase
+        .from("facebook_pixel_config")
+        .select("pixel_id, is_active")
+        .eq("restaurant_id", restaurant.id)
+        .single();
+
+      if (pixelData) {
+        setPixelConfig({
+          pixel_id: pixelData.pixel_id || "",
+          is_active: pixelData.is_active ?? true,
+        });
+      }
     }
     setLoading(false);
+  };
+
+  const handleSavePixelConfig = async () => {
+    if (!restaurantId) return;
+
+    setSaving(true);
+    try {
+      // Verificar se já existe configuração
+      const { data: existing } = await supabase
+        .from("facebook_pixel_config")
+        .select("id")
+        .eq("restaurant_id", restaurantId)
+        .single();
+
+      if (existing) {
+        // Atualizar existente
+        const { error } = await supabase
+          .from("facebook_pixel_config")
+          .update({
+            pixel_id: pixelConfig.pixel_id,
+            is_active: pixelConfig.is_active,
+          })
+          .eq("restaurant_id", restaurantId);
+
+        if (error) throw error;
+      } else {
+        // Criar novo
+        const { error } = await supabase
+          .from("facebook_pixel_config")
+          .insert({
+            restaurant_id: restaurantId,
+            pixel_id: pixelConfig.pixel_id,
+            is_active: pixelConfig.is_active,
+          });
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Configuração salva!",
+        description: "Facebook Pixel configurado com sucesso.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -308,6 +377,66 @@ const Restaurant = () => {
                   />
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Facebook Pixel</CardTitle>
+              <CardDescription>
+                Configure o Facebook Pixel para rastrear conversões e otimizar anúncios
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Ativar Pixel</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Rastrear visitantes e conversões
+                  </p>
+                </div>
+                <Switch
+                  checked={pixelConfig.is_active}
+                  onCheckedChange={(checked) => setPixelConfig({...pixelConfig, is_active: checked})}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pixel_id">ID do Pixel</Label>
+                <Input
+                  id="pixel_id"
+                  placeholder="123456789012345"
+                  value={pixelConfig.pixel_id}
+                  onChange={(e) => setPixelConfig({...pixelConfig, pixel_id: e.target.value})}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Encontre seu Pixel ID no Gerenciador de Eventos do Facebook
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleSavePixelConfig}
+                disabled={saving || !pixelConfig.pixel_id}
+              >
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Configuração do Pixel
+              </Button>
+
+              <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm font-medium mb-2">💡 Potencialize seu negócio com Tráfego Pago</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Nossos gestores especializados podem criar campanhas profissionais no Facebook e Instagram para aumentar suas vendas.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.href = '/boost-business'}
+                >
+                  Saiba Mais
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
