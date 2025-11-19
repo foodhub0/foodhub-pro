@@ -187,7 +187,7 @@ CREATE POLICY "Users can view restaurants of their brand"
   TO authenticated
   USING (
     brand_id = (SELECT (raw_user_meta_data->>'brand_id')::uuid FROM auth.users WHERE id = auth.uid())
-    OR user_id = auth.uid()
+    OR owner_id = auth.uid()
   );
 
 -- Roles (público para leitura)
