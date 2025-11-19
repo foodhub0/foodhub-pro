@@ -33,38 +33,47 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Chamar Edge Function para criar owner
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/signup-owner`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabaseAnonKey}`,
+      // Signup direto - o trigger do banco vai tornar o primeiro usuário em Owner
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: email.split("@")[0],
+          },
         },
-        body: JSON.stringify({
-          email,
-          password,
-          name: email.split("@")[0],
-        }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Erro ao criar conta");
+      if (error) {
+        throw error;
       }
 
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Você é o proprietário do sistema. Faça login para continuar.",
-      });
-      setPassword("");
+      // Se foi criado com sucesso
+      if (data.user) {
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Faça login para continuar.",
+        });
+
+        // Aguardar 1 segundo e tentar fazer login automaticamente
+        setTimeout(async () => {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (!signInError) {
+            navigate("/dashboard");
+          }
+        }, 1000);
+
+        setPassword("");
+      }
     } catch (error: any) {
+      console.error("Erro no signup:", error);
       toast({
         title: "Erro ao criar conta",
-        description: error.message,
+        description: error.message || "Erro desconhecido. Tente novamente.",
         variant: "destructive",
       });
     } finally {
