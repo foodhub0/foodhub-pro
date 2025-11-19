@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_tracking_events_restaurant ON public.tracking_eve
 CREATE INDEX IF NOT EXISTS idx_tracking_events_event_name ON public.tracking_events(event_name);
 CREATE INDEX IF NOT EXISTS idx_tracking_events_session ON public.tracking_events(session_id);
 CREATE INDEX IF NOT EXISTS idx_tracking_events_created_at ON public.tracking_events(created_at);
-CREATE INDEX IF NOT EXISTS idx_tracking_events_restaurant_date ON public.tracking_events(restaurant_id, DATE(created_at));
+CREATE INDEX IF NOT EXISTS idx_tracking_events_restaurant_created ON public.tracking_events(restaurant_id, created_at);
 
 -- View materializada para analytics de conversão (atualizada a cada hora)
 CREATE MATERIALIZED VIEW IF NOT EXISTS public.conversion_analytics AS
