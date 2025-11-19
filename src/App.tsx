@@ -31,6 +31,7 @@ import IFoodCallback from "./pages/IFoodCallback";
 import Analytics from "./pages/Analytics";
 import BoostBusiness from "./pages/BoostBusiness";
 import Users from "./pages/Users";
+import NewUser from "./pages/NewUser";
 import BrandDashboard from "./pages/BrandDashboard";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,14 @@ const App = () => (
                     element={
                       <RoleGuard roles={['owner', 'manager']}>
                         <Users />
+                      </RoleGuard>
+                    }
+                  />
+                  <Route
+                    path="/users/new"
+                    element={
+                      <RoleGuard roles={['owner', 'manager']}>
+                        <NewUser />
                       </RoleGuard>
                     }
                   />
