@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./contexts/CartContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { BrandProvider } from "./contexts/BrandContext";
+import { PermissionsProvider } from "./contexts/PermissionsContext";
+import { RoleGuard } from "./guards/RoleGuard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -27,6 +30,8 @@ import IFoodIntegration from "./pages/IFoodIntegration";
 import IFoodCallback from "./pages/IFoodCallback";
 import Analytics from "./pages/Analytics";
 import BoostBusiness from "./pages/BoostBusiness";
+import Users from "./pages/Users";
+import BrandDashboard from "./pages/BrandDashboard";
 
 const queryClient = new QueryClient();
 
@@ -35,37 +40,62 @@ const App = () => (
     <ThemeProvider>
       <TooltipProvider>
         <CartProvider>
-          <Toaster />
-          <Sonner />
           <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/setup" element={<Setup />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/restaurant" element={<Restaurant />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/menu-preview" element={<MenuPreview />} />
-            <Route path="/tables" element={<Tables />} />
-            <Route path="/orders" element={<OrdersKanban />} />
-            <Route path="/couriers" element={<Couriers />} />
-            <Route path="/costs" element={<Costs />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/ifood-integration" element={<IFoodIntegration />} />
-            <Route path="/ifood-callback" element={<IFoodCallback />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/boost-business" element={<BoostBusiness />} />
-            <Route path="/m/:slug" element={<PublicMenu />} />
-            <Route path="/m/:slug/checkout" element={<Checkout />} />
-            <Route path="/m/:slug/order/:orderId" element={<OrderConfirmation />} />
-            <Route path="/diagnostic/:slug" element={<DiagnosticMenu />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </CartProvider>
-    </TooltipProvider>
+            <PermissionsProvider>
+              <BrandProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/setup" element={<Setup />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/restaurant" element={<Restaurant />} />
+                  <Route path="/categories" element={<Categories />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/menu-preview" element={<MenuPreview />} />
+                  <Route path="/tables" element={<Tables />} />
+                  <Route path="/orders" element={<OrdersKanban />} />
+                  <Route path="/couriers" element={<Couriers />} />
+                  <Route path="/costs" element={<Costs />} />
+                  <Route path="/customers" element={<Customers />} />
+                  <Route path="/ifood-integration" element={<IFoodIntegration />} />
+                  <Route path="/ifood-callback" element={<IFoodCallback />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/boost-business" element={<BoostBusiness />} />
+
+                  {/* RBAC Routes */}
+                  <Route
+                    path="/users"
+                    element={
+                      <RoleGuard roles={['owner', 'manager']}>
+                        <Users />
+                      </RoleGuard>
+                    }
+                  />
+                  <Route
+                    path="/brand-dashboard"
+                    element={
+                      <RoleGuard roles={['owner']}>
+                        <BrandDashboard />
+                      </RoleGuard>
+                    }
+                  />
+
+                  {/* Public Routes */}
+                  <Route path="/m/:slug" element={<PublicMenu />} />
+                  <Route path="/m/:slug/checkout" element={<Checkout />} />
+                  <Route path="/m/:slug/order/:orderId" element={<OrderConfirmation />} />
+                  <Route path="/diagnostic/:slug" element={<DiagnosticMenu />} />
+
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrandProvider>
+            </PermissionsProvider>
+          </BrowserRouter>
+        </CartProvider>
+      </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

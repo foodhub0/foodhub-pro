@@ -22,11 +22,14 @@ import {
   Plug,
   BarChart3,
   Rocket,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import AIChat from "@/components/AIChat";
 import StoreStatusControl from "@/components/StoreStatusControl";
+import { RestaurantSelector } from "@/components/RestaurantSelector";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -39,6 +42,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [restaurantName, setRestaurantName] = useState("FoodHub");
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const { isOwner, can } = usePermissions();
 
   useEffect(() => {
     loadRestaurant();
@@ -66,7 +70,8 @@ const Layout = ({ children }: LayoutProps) => {
     navigate("/auth");
   };
 
-  const menuItems = [
+  // Menu items dinâmicos baseados em permissões
+  const baseMenuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: ShoppingBag, label: "Pedidos", path: "/orders" },
     { icon: UserCircle, label: "Clientes", path: "/customers" },
@@ -79,6 +84,13 @@ const Layout = ({ children }: LayoutProps) => {
     { icon: Plug, label: "Integração iFood", path: "/ifood-integration" },
     { icon: BarChart3, label: "Analytics", path: "/analytics" },
     { icon: Rocket, label: "Potencializar Negócio", path: "/boost-business" },
+  ];
+
+  // Adicionar itens condicionais baseados em permissões
+  const menuItems = [
+    ...(isOwner() ? [{ icon: Building2, label: "Dashboard da Marca", path: "/brand-dashboard" }] : []),
+    ...baseMenuItems,
+    ...(can('read', 'users') ? [{ icon: Users, label: "Usuários", path: "/users" }] : []),
   ];
 
   return (
@@ -207,8 +219,14 @@ const Layout = ({ children }: LayoutProps) => {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <span className="font-bold">{restaurantName}</span>
+          <RestaurantSelector />
           <div className="w-10" />
+        </div>
+
+        {/* Desktop Header with Restaurant Selector */}
+        <div className="hidden lg:flex items-center justify-between h-16 px-6 border-b bg-card">
+          <h2 className="text-lg font-semibold">Bem-vindo ao FoodHub Pro</h2>
+          <RestaurantSelector />
         </div>
 
         {children}
