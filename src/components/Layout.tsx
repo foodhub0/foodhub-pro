@@ -77,9 +77,9 @@ const Layout = ({ children }: LayoutProps) => {
   const getMenuItems = () => {
     const items = [];
 
-    // Dashboard da Marca (apenas Owner)
+    // Início (Dashboard da Marca - apenas Owner)
     if (isOwner()) {
-      items.push({ icon: Building2, label: "Dashboard da Marca", path: "/brand-dashboard" });
+      items.push({ icon: Building2, label: "Início", path: "/brand-dashboard" });
     }
 
     // Dashboard (todos exceto Garçom)
@@ -115,11 +115,6 @@ const Layout = ({ children }: LayoutProps) => {
     // Produtos (Manager, Owner)
     if (can('read', 'products')) {
       items.push({ icon: Utensils, label: "Produtos", path: "/products" });
-    }
-
-    // Grupos de Adicionais (Manager, Owner)
-    if (can('read', 'products')) {
-      items.push({ icon: Layers, label: "Grupos de Adicionais", path: "/addon-groups" });
     }
 
     // Mesas

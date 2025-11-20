@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Copy, ChevronDown } from "lucide-react";
+import { Copy, ChevronDown, Truck, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
 
 interface RestaurantProfileCardProps {
   restaurantId: string | null;
@@ -23,6 +24,8 @@ export const RestaurantProfileCard = ({
   const [slug, setSlug] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(true);
+  const [deliveryTime, setDeliveryTime] = useState(30);
+  const [pickupTime, setPickupTime] = useState(20);
 
   useEffect(() => {
     if (restaurantId) {
@@ -35,7 +38,7 @@ export const RestaurantProfileCard = ({
 
     const { data, error } = await supabase
       .from("restaurants")
-      .select("name, slug, logo_url, is_open")
+      .select("name, slug, logo_url, is_open, delivery_time_estimate, pickup_time_estimate")
       .eq("id", restaurantId)
       .single();
 
@@ -49,6 +52,8 @@ export const RestaurantProfileCard = ({
       setSlug(data.slug || "");
       setLogoUrl(data.logo_url);
       setIsOpen(data.is_open ?? true);
+      setDeliveryTime(data.delivery_time_estimate ?? 30);
+      setPickupTime(data.pickup_time_estimate ?? 20);
     }
   };
 
@@ -100,6 +105,60 @@ export const RestaurantProfileCard = ({
     setLoading(false);
   };
 
+  const updateDeliveryTime = async (minutes: number) => {
+    if (!restaurantId || loading || minutes < 1 || minutes > 999) return;
+
+    setLoading(true);
+    const { error } = await supabase
+      .from("restaurants")
+      .update({ delivery_time_estimate: minutes })
+      .eq("id", restaurantId);
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    setDeliveryTime(minutes);
+    toast({
+      title: "Atualizado",
+      description: `Prazo de entrega: ${minutes} min`,
+    });
+    setLoading(false);
+  };
+
+  const updatePickupTime = async (minutes: number) => {
+    if (!restaurantId || loading || minutes < 1 || minutes > 999) return;
+
+    setLoading(true);
+    const { error } = await supabase
+      .from("restaurants")
+      .update({ pickup_time_estimate: minutes })
+      .eq("id", restaurantId);
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    setPickupTime(minutes);
+    toast({
+      title: "Atualizado",
+      description: `Prazo de retirada: ${minutes} min`,
+    });
+    setLoading(false);
+  };
+
   if (!restaurantId) return null;
 
   // Versão compacta para sidebar fechada
@@ -126,6 +185,10 @@ export const RestaurantProfileCard = ({
             isOpen ? "bg-green-500 animate-pulse" : "bg-red-500"
           )}
         ></div>
+        <div className="text-[10px] font-medium text-gray-600 text-center">
+          <div>{deliveryTime}'</div>
+          <div>{pickupTime}'</div>
+        </div>
       </div>
     );
   }
@@ -200,10 +263,10 @@ export const RestaurantProfileCard = ({
         </div>
       </div>
 
-      {/* Secção de Horários */}
-      <div className="bg-gray-50 rounded-xl p-3 transition-all duration-300">
+      {/* Secção de Status e Prazos */}
+      <div className="bg-gray-50 rounded-xl p-3 space-y-3">
         {/* Cabeçalho da Secção */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div
               className={cn(
@@ -235,11 +298,48 @@ export const RestaurantProfileCard = ({
           </button>
         </div>
 
+        {/* Prazos */}
+        <div className="space-y-2">
+          {/* Entrega */}
+          <div className="flex items-center gap-2">
+            <Truck className="h-3 w-3 text-gray-600 flex-shrink-0" />
+            <span className="text-xs text-gray-600 flex-1">Entrega</span>
+            <Input
+              type="number"
+              min="1"
+              max="999"
+              value={deliveryTime}
+              onChange={(e) => setDeliveryTime(parseInt(e.target.value) || 0)}
+              onBlur={(e) => updateDeliveryTime(parseInt(e.target.value) || 30)}
+              disabled={loading}
+              className="w-14 h-6 text-center text-xs"
+            />
+            <span className="text-xs text-gray-500">min</span>
+          </div>
+
+          {/* Retirada */}
+          <div className="flex items-center gap-2">
+            <Clock className="h-3 w-3 text-gray-600 flex-shrink-0" />
+            <span className="text-xs text-gray-600 flex-1">Retirada</span>
+            <Input
+              type="number"
+              min="1"
+              max="999"
+              value={pickupTime}
+              onChange={(e) => setPickupTime(parseInt(e.target.value) || 0)}
+              onBlur={(e) => updatePickupTime(parseInt(e.target.value) || 20)}
+              disabled={loading}
+              className="w-14 h-6 text-center text-xs"
+            />
+            <span className="text-xs text-gray-500">min</span>
+          </div>
+        </div>
+
         {/* Conteúdo dos Horários */}
         <div
           className={cn(
             "overflow-hidden transition-all duration-300",
-            hoursExpanded ? "max-h-[200px] opacity-100" : "max-h-0 opacity-0"
+            hoursExpanded ? "max-h-[200px] opacity-100 mt-3 pt-3 border-t" : "max-h-0 opacity-0"
           )}
         >
           <h3 className="text-gray-700 font-medium text-xs mb-2">
