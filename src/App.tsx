@@ -16,6 +16,7 @@ import Setup from "./pages/Setup";
 import Restaurant from "./pages/Restaurant";
 import Categories from "./pages/Categories";
 import Products from "./pages/Products";
+import ProductsManagement from "./pages/ProductsManagement";
 import MenuPreview from "./pages/MenuPreview";
 import Tables from "./pages/Tables";
 import OrdersKanban from "./pages/OrdersKanban";
@@ -55,8 +56,11 @@ const App = () => (
                   <Route path="/setup" element={<Setup />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/restaurant" element={<Restaurant />} />
+                  {/* New consolidated products page */}
+                  <Route path="/products-management" element={<ProductsManagement />} />
+                  {/* Legacy routes - keeping for compatibility */}
                   <Route path="/categories" element={<Categories />} />
-                  <Route path="/products" element={<Products />} />
+                  <Route path="/products" element={<ProductsManagement />} />
                   <Route path="/addon-groups" element={<AddonGroups />} />
                   <Route path="/menu-preview" element={<MenuPreview />} />
                   <Route path="/tables" element={<Tables />} />
