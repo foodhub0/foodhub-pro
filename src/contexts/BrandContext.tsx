@@ -57,50 +57,66 @@ export const BrandProvider = ({ children }: BrandProviderProps) => {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
+        console.log('[BrandContext] No user found');
         setIsLoading(false);
         return;
       }
+
+      console.log('[BrandContext] User:', user.id);
+      console.log('[BrandContext] Metadata:', user.user_metadata);
 
       const metadata = user.user_metadata || {};
       let brandId = metadata.brand_id;
       const roleName = metadata.role_name;
 
+      console.log('[BrandContext] Initial brand_id from metadata:', brandId);
+
       // Se não tem brand_id no metadata, tentar buscar pelo restaurante do owner
       if (!brandId) {
-        const { data: restaurant } = await supabase
+        console.log('[BrandContext] Trying to fetch brand_id from restaurant...');
+        const { data: restaurant, error: restaurantError } = await supabase
           .from('restaurants')
           .select('brand_id')
           .eq('owner_id', user.id)
           .single();
 
+        console.log('[BrandContext] Restaurant query result:', restaurant, restaurantError);
+
         if (restaurant) {
           brandId = restaurant.brand_id;
+          console.log('[BrandContext] Found brand_id from restaurant:', brandId);
         }
       }
 
       if (!brandId) {
-        // Usuário sem marca ainda - pode ser novo
+        console.log('[BrandContext] No brand_id found - user may not have a brand yet');
         setIsLoading(false);
         return;
       }
 
       // Carregar dados da marca
-      const { data: brandData } = await supabase
+      console.log('[BrandContext] Loading brand data for:', brandId);
+      const { data: brandData, error: brandError } = await supabase
         .from('brands')
         .select('*')
         .eq('id', brandId)
         .single();
+
+      console.log('[BrandContext] Brand query result:', brandData, brandError);
 
       if (brandData) {
         setBrand(brandData);
       }
 
       // Carregar restaurantes da marca
-      const { data: restaurantsData } = await supabase
+      console.log('[BrandContext] Loading restaurants for brand:', brandId);
+      const { data: restaurantsData, error: restaurantsError } = await supabase
         .from('restaurants')
         .select('*')
         .eq('brand_id', brandId)
         .order('restaurant_index');
+
+      console.log('[BrandContext] Restaurants query result:', restaurantsData, restaurantsError);
 
       if (restaurantsData) {
         setRestaurants(restaurantsData);
@@ -128,8 +144,9 @@ export const BrandProvider = ({ children }: BrandProviderProps) => {
         }
       }
     } catch (error) {
-      console.error('Error loading brand data:', error);
+      console.error('[BrandContext] Error loading brand data:', error);
     } finally {
+      console.log('[BrandContext] Loading complete');
       setIsLoading(false);
     }
   };
