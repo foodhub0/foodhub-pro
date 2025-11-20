@@ -35,16 +35,16 @@ const Users = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { can } = usePermissions();
-  const { brand, restaurants, currentRestaurant } = useBrand();
+  const { brand, restaurants, currentRestaurant, isLoading: brandLoading } = useBrand();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (brand) {
+    if (!brandLoading && brand) {
       loadUsers();
     }
-  }, [brand, currentRestaurant]);
+  }, [brandLoading, brand?.id, currentRestaurant?.id]);
 
   const loadUsers = async () => {
     try {
@@ -90,7 +90,7 @@ const Users = () => {
     return color || "#6b7280";
   };
 
-  if (loading) {
+  if (brandLoading || loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen">

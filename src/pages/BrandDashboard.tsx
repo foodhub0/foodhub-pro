@@ -5,7 +5,7 @@ import { Building2, Store, Users, TrendingUp, DollarSign, ShoppingCart } from "l
 import { Badge } from "@/components/ui/badge";
 
 const BrandDashboard = () => {
-  const { brand, restaurants } = useBrand();
+  const { brand, restaurants, isLoading } = useBrand();
 
   // Mock de dados consolidados
   const consolidated = {
@@ -15,11 +15,21 @@ const BrandDashboard = () => {
     averageTicket: 36.92,
   };
 
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
+
   if (!brand) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen">
-          <p className="text-muted-foreground">Carregando dados da marca...</p>
+          <p className="text-muted-foreground">Marca não encontrada</p>
         </div>
       </Layout>
     );
