@@ -30,7 +30,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import AIChat from "@/components/AIChat";
-import StoreStatusControl from "@/components/StoreStatusControl";
+import { RestaurantProfileCard } from "@/components/RestaurantProfileCard";
 import { RestaurantSelector } from "@/components/RestaurantSelector";
 import { usePermissions } from "@/contexts/PermissionsContext";
 
@@ -176,34 +176,12 @@ const Layout = ({ children }: LayoutProps) => {
           sidebarOpen ? "w-64" : "w-0 lg:w-20"
         )}
       >
-        {/* Header */}
-        <div className="flex h-16 items-center justify-between px-4 border-b">
-          {sidebarOpen && (
-            <div className="flex items-center gap-2">
-              {restaurantLogo ? (
-                <img
-                  src={restaurantLogo}
-                  alt={restaurantName}
-                  className="w-10 h-10 rounded-lg object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                  <Utensils className="w-6 h-6 text-white" />
-                </div>
-              )}
-              <div className="hidden lg:block">
-                <p className="font-bold text-foreground truncate max-w-[140px]">
-                  {restaurantName}
-                </p>
-                <p className="text-xs text-muted-foreground">Painel Admin</p>
-              </div>
-            </div>
-          )}
+        {/* Mobile Header - Apenas o botão de menu */}
+        <div className="flex h-16 items-center justify-end px-4 border-b lg:hidden">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden"
           >
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
@@ -215,7 +193,7 @@ const Layout = ({ children }: LayoutProps) => {
           size="icon"
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className={cn(
-            "hidden lg:flex absolute -right-3 top-20 z-50 h-8 w-8 rounded-full border-2 bg-background shadow-md hover:bg-accent",
+            "hidden lg:flex absolute -right-3 top-32 z-50 h-8 w-8 rounded-full border-2 bg-background shadow-md hover:bg-accent",
             "transition-all duration-300"
           )}
         >
@@ -226,8 +204,8 @@ const Layout = ({ children }: LayoutProps) => {
           )}
         </Button>
 
-        {/* Controle de Status da Loja */}
-        <StoreStatusControl restaurantId={restaurantId} sidebarOpen={sidebarOpen} />
+        {/* Restaurant Profile Card - Novo Design */}
+        <RestaurantProfileCard restaurantId={restaurantId} sidebarOpen={sidebarOpen} />
 
         {/* Menu */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
