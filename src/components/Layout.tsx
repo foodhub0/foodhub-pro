@@ -188,7 +188,7 @@ const Layout = ({ children }: LayoutProps) => {
           size="icon"
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className={cn(
-            "hidden lg:flex absolute -right-3 top-32 z-50 h-8 w-8 rounded-full border-2 bg-background shadow-md hover:bg-accent",
+            "hidden lg:flex absolute -right-3 top-6 z-50 h-8 w-8 rounded-full border-2 bg-background shadow-md hover:bg-accent",
             "transition-all duration-300"
           )}
         >
