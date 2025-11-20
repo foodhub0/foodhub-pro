@@ -67,6 +67,18 @@ interface AddonGroupItem {
   is_available: boolean;
 }
 
+interface ProductAddonLink {
+  id: string;
+  product_id: string;
+  addon_group_id: string;
+  is_required: boolean;
+  min_quantity: number;
+  max_quantity: number | null;
+  allow_multiple: boolean;
+  display_order: number;
+  product_addon_groups?: AddonGroup;
+}
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -117,6 +129,17 @@ const ProductsManagement = () => {
     name: "",
     price: "",
     is_available: true,
+  });
+
+  // Product Addon Links State
+  const [productAddonLinks, setProductAddonLinks] = useState<ProductAddonLink[]>([]);
+  const [addonLinkDialogOpen, setAddonLinkDialogOpen] = useState(false);
+  const [addonLinkForm, setAddonLinkForm] = useState({
+    addon_group_id: "",
+    is_required: false,
+    min_quantity: 0,
+    max_quantity: "",
+    allow_multiple: true,
   });
 
   // ============================================================================
@@ -355,6 +378,7 @@ const ProductsManagement = () => {
       is_active: product.is_active,
       is_featured: product.is_featured,
     });
+    loadProductAddonLinks(product.id);
     setProductDialogOpen(true);
   };
 
@@ -369,6 +393,7 @@ const ProductsManagement = () => {
       is_active: true,
       is_featured: false,
     });
+    setProductAddonLinks([]);
   };
 
   // ============================================================================
@@ -572,6 +597,96 @@ const ProductsManagement = () => {
     setSelectedGroupId(groupId);
     resetItemForm();
     setItemDialogOpen(true);
+  };
+
+  // ============================================================================
+  // PRODUCT ADDON LINKS CRUD
+  // ============================================================================
+
+  const loadProductAddonLinks = async (productId: string) => {
+    const { data } = await supabase
+      .from("product_addon_group_links")
+      .select(`
+        *,
+        product_addon_groups (
+          id,
+          name,
+          description,
+          is_active
+        )
+      `)
+      .eq("product_id", productId)
+      .order("display_order");
+
+    setProductAddonLinks(data || []);
+  };
+
+  const handleAddAddonLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+
+    const linkData = {
+      product_id: editingProduct.id,
+      addon_group_id: addonLinkForm.addon_group_id,
+      is_required: addonLinkForm.is_required,
+      min_quantity: addonLinkForm.min_quantity,
+      max_quantity: addonLinkForm.max_quantity ? parseInt(addonLinkForm.max_quantity) : null,
+      allow_multiple: addonLinkForm.allow_multiple,
+      display_order: productAddonLinks.length,
+    };
+
+    const { error } = await supabase
+      .from("product_addon_group_links")
+      .insert(linkData);
+
+    if (error) {
+      toast({
+        title: "Erro ao adicionar adicional",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Adicional vinculado!",
+      });
+      setAddonLinkDialogOpen(false);
+      resetAddonLinkForm();
+      loadProductAddonLinks(editingProduct.id);
+    }
+  };
+
+  const handleRemoveAddonLink = async (linkId: string) => {
+    if (!confirm("Remover este grupo de adicionais do produto?")) return;
+
+    const { error } = await supabase
+      .from("product_addon_group_links")
+      .delete()
+      .eq("id", linkId);
+
+    if (error) {
+      toast({
+        title: "Erro ao remover",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Adicional removido!",
+      });
+      if (editingProduct) {
+        loadProductAddonLinks(editingProduct.id);
+      }
+    }
+  };
+
+  const resetAddonLinkForm = () => {
+    setAddonLinkForm({
+      addon_group_id: "",
+      is_required: false,
+      min_quantity: 0,
+      max_quantity: "",
+      allow_multiple: true,
+    });
   };
 
   // ============================================================================
@@ -883,6 +998,195 @@ const ProductsManagement = () => {
                         }
                       />
                     </div>
+
+                    {/* Addon Groups Section - Only show when editing */}
+                    {editingProduct && (
+                      <div className="space-y-3 pt-4 border-t">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-base">Adicionais do Produto</Label>
+                            <p className="text-xs text-muted-foreground">
+                              Configure os grupos de adicionais disponíveis para este produto
+                            </p>
+                          </div>
+                          <Dialog
+                            open={addonLinkDialogOpen}
+                            onOpenChange={(open) => {
+                              setAddonLinkDialogOpen(open);
+                              if (!open) resetAddonLinkForm();
+                            }}
+                          >
+                            <DialogTrigger asChild>
+                              <Button type="button" variant="outline" size="sm">
+                                <Plus className="h-3 w-3 mr-1" />
+                                Adicionar
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Adicionar Grupo de Adicionais</DialogTitle>
+                              </DialogHeader>
+                              <form onSubmit={handleAddAddonLink} className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="link-addon-group">Grupo de Adicionais *</Label>
+                                  <Select
+                                    value={addonLinkForm.addon_group_id}
+                                    onValueChange={(value) =>
+                                      setAddonLinkForm({ ...addonLinkForm, addon_group_id: value })
+                                    }
+                                    required
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecione um grupo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {addonGroups
+                                        .filter(
+                                          (g) =>
+                                            !productAddonLinks.some(
+                                              (l) => l.addon_group_id === g.id
+                                            )
+                                        )
+                                        .map((group) => (
+                                          <SelectItem key={group.id} value={group.id}>
+                                            {group.name}
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <Label htmlFor="link-required">Obrigatório</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                      Cliente deve selecionar pelo menos uma opção
+                                    </p>
+                                  </div>
+                                  <Switch
+                                    id="link-required"
+                                    checked={addonLinkForm.is_required}
+                                    onCheckedChange={(checked) =>
+                                      setAddonLinkForm({ ...addonLinkForm, is_required: checked })
+                                    }
+                                  />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="link-min-qty">Quantidade Mínima</Label>
+                                    <Input
+                                      id="link-min-qty"
+                                      type="number"
+                                      min="0"
+                                      value={addonLinkForm.min_quantity}
+                                      onChange={(e) =>
+                                        setAddonLinkForm({
+                                          ...addonLinkForm,
+                                          min_quantity: parseInt(e.target.value) || 0,
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="link-max-qty">Quantidade Máxima</Label>
+                                    <Input
+                                      id="link-max-qty"
+                                      type="number"
+                                      min="0"
+                                      placeholder="Ilimitado"
+                                      value={addonLinkForm.max_quantity}
+                                      onChange={(e) =>
+                                        setAddonLinkForm({
+                                          ...addonLinkForm,
+                                          max_quantity: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <Label htmlFor="link-multiple">Permitir Múltiplos</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                      Cliente pode selecionar mais de uma opção
+                                    </p>
+                                  </div>
+                                  <Switch
+                                    id="link-multiple"
+                                    checked={addonLinkForm.allow_multiple}
+                                    onCheckedChange={(checked) =>
+                                      setAddonLinkForm({
+                                        ...addonLinkForm,
+                                        allow_multiple: checked,
+                                      })
+                                    }
+                                  />
+                                </div>
+
+                                <Button type="submit" className="w-full">
+                                  Adicionar Grupo
+                                </Button>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+
+                        {productAddonLinks.length === 0 ? (
+                          <div className="text-center py-6 bg-muted/30 rounded-lg">
+                            <Layers className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-muted-foreground">
+                              Nenhum grupo de adicionais vinculado
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {productAddonLinks.map((link) => (
+                              <div
+                                key={link.id}
+                                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border"
+                              >
+                                <Layers className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-medium text-sm">
+                                      {link.product_addon_groups?.name}
+                                    </p>
+                                    {link.is_required && (
+                                      <span className="text-xs px-2 py-0.5 rounded bg-accent/10 text-accent">
+                                        Obrigatório
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                                    <span>
+                                      Min: {link.min_quantity}
+                                    </span>
+                                    <span>
+                                      Max: {link.max_quantity ?? "Ilimitado"}
+                                    </span>
+                                    <span>
+                                      {link.allow_multiple ? "Múltiplos" : "Único"}
+                                    </span>
+                                  </div>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 flex-shrink-0"
+                                  onClick={() => handleRemoveAddonLink(link.id)}
+                                >
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <Button type="submit" className="w-full">
                       {editingProduct ? "Atualizar" : "Criar"} Produto
                     </Button>
