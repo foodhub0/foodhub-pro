@@ -41,8 +41,12 @@ const Users = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (!brandLoading && brand) {
-      loadUsers();
+    if (!brandLoading) {
+      if (brand) {
+        loadUsers();
+      } else {
+        setLoading(false);
+      }
     }
   }, [brandLoading, brand?.id, currentRestaurant?.id]);
 
@@ -95,6 +99,16 @@ const Users = () => {
       <Layout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!brand) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-muted-foreground">Marca não encontrada</p>
         </div>
       </Layout>
     );
