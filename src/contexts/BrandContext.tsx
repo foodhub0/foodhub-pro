@@ -62,8 +62,21 @@ export const BrandProvider = ({ children }: BrandProviderProps) => {
       }
 
       const metadata = user.user_metadata || {};
-      const brandId = metadata.brand_id;
+      let brandId = metadata.brand_id;
       const roleName = metadata.role_name;
+
+      // Se não tem brand_id no metadata, tentar buscar pelo restaurante do owner
+      if (!brandId) {
+        const { data: restaurant } = await supabase
+          .from('restaurants')
+          .select('brand_id')
+          .eq('owner_id', user.id)
+          .single();
+
+        if (restaurant) {
+          brandId = restaurant.brand_id;
+        }
+      }
 
       if (!brandId) {
         // Usuário sem marca ainda - pode ser novo
