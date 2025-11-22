@@ -30,7 +30,7 @@ interface Role {
 const NewUser = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { brand, restaurants } = useBrand();
+  const { brand, restaurants, isLoading: brandLoading } = useBrand();
 
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -212,11 +212,30 @@ const NewUser = () => {
     setPassword(pass);
   };
 
-  if (loadingRoles) {
+  // Aguardar tanto os roles quanto o brand context carregarem
+  if (loadingRoles || brandLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Verificar se brand está disponível
+  if (!brand) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="max-w-md p-6">
+            <p className="text-center text-muted-foreground mb-4">
+              Nenhuma marca encontrada. Por favor, configure seu restaurante primeiro.
+            </p>
+            <Button onClick={() => navigate("/restaurant")} className="w-full">
+              Ir para Configurações
+            </Button>
+          </Card>
         </div>
       </Layout>
     );
