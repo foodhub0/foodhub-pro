@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -33,6 +33,7 @@ import AIChat from "@/components/AIChat";
 import { RestaurantProfileCard } from "@/components/RestaurantProfileCard";
 import { RestaurantSelector } from "@/components/RestaurantSelector";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import { useBrand } from "@/contexts/BrandContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -42,31 +43,13 @@ const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [restaurantName, setRestaurantName] = useState("FoodHub");
-  const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const { isOwner, isWaiter, isReception, isFinancial, isMarketing, can, role } = usePermissions();
+  const { brand, currentRestaurant } = useBrand();
 
-  useEffect(() => {
-    loadRestaurant();
-  }, []);
-
-  const loadRestaurant = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: restaurant } = await supabase
-      .from("restaurants")
-      .select("id, name, logo_url")
-      .eq("owner_id", user.id)
-      .single();
-
-    if (restaurant) {
-      setRestaurantId(restaurant.id);
-      setRestaurantName(restaurant.name);
-      setRestaurantLogo(restaurant.logo_url);
-    }
-  };
+  // Usar dados do BrandContext ao invés de buscar diretamente
+  const restaurantName = currentRestaurant?.name || brand?.name || "FoodHub";
+  const restaurantLogo = brand?.logo_url || null;
+  const restaurantId = currentRestaurant?.id || null;
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
