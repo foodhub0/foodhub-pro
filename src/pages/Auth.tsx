@@ -35,13 +35,15 @@ const Auth = () => {
     try {
       const userName = email.split("@")[0];
 
-      // 1. Signup no Supabase
+      // 1. Signup no Supabase com metadata básico
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             name: userName,
+            // Definir como owner por padrão - será confirmado no Setup
+            role_name: 'owner',
           },
         },
       });
@@ -51,67 +53,24 @@ const Auth = () => {
       }
 
       if (data.user) {
-        // 2. Processar usuário como owner (se for o primeiro)
-        const { data: processResult, error: processError } = await supabase.rpc(
-          'process_new_user_as_owner',
-          {
-            user_id: data.user.id,
-            user_email: email,
-            user_name: userName,
-          }
-        );
-
-        if (processError) {
-          console.error("Erro ao processar owner:", processError);
-        }
-
-        const isOwner = processResult?.is_owner === true;
-
-        // 3. Se é owner, atualizar metadata ANTES de fazer login
-        if (isOwner && processResult) {
-          const { error: updateError } = await supabase.auth.updateUser({
-            data: {
-              name: userName,
-              role_id: processResult.role_id,
-              role_name: processResult.role_name,
-              role_color: processResult.role_color,
-              brand_id: processResult.brand_id,
-              restaurant_id: processResult.restaurant_id,
-              is_active: true,
-            },
-          });
-
-          if (updateError) {
-            console.error("Erro ao atualizar metadata:", updateError);
-          }
-
-          // Aguardar um pouco para garantir que o metadata foi atualizado
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-
         toast({
           title: "Conta criada com sucesso!",
-          description: isOwner
-            ? "Você é o proprietário do sistema! Redirecionando..."
-            : "Conta criada. Redirecionando...",
+          description: "Redirecionando para configuração...",
         });
 
-        // 4. Fazer login
-        setTimeout(async () => {
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
+        // 2. Fazer login automaticamente
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-          if (!signInError) {
-            // Aguardar mais um pouco para contextos carregarem
-            setTimeout(() => {
-              navigate("/dashboard");
-            }, 500);
-          }
-        }, 1000);
+        if (signInError) {
+          throw signInError;
+        }
 
+        // 3. Redirecionar para setup (onde brand e restaurant serão criados)
         setPassword("");
+        navigate("/setup");
       }
     } catch (error: any) {
       console.error("Erro no signup:", error);
