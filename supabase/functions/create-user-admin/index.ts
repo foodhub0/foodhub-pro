@@ -1,99 +1,141 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+// Edge Function: create-user-admin
+// Cria novos usuários usando Supabase Admin API (não desconecta o owner)
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Criar cliente Supabase com permissões de admin (Service Role)
+    // Verificar autenticação
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('Sem autorização')
+    }
+
+    // Criar cliente Supabase com service role (admin)
     const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         auth: {
           autoRefreshToken: false,
-          persistSession: false,
+          persistSession: false
+        }
+      }
+    )
+
+    // Criar cliente normal para verificar quem está chamando
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
         },
       }
-    );
+    )
 
-    // Verificar autenticação do usuário que está fazendo a requisição
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Não autorizado");
+    // Verificar se o usuário atual está autenticado
+    const { data: { user: currentUser }, error: authError } = await supabaseClient.auth.getUser()
+
+    if (authError || !currentUser) {
+      throw new Error('Usuário não autenticado')
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user: requestingUser },
-      error: authError,
-    } = await supabaseAdmin.auth.getUser(token);
-
-    if (authError || !requestingUser) {
-      throw new Error("Não autorizado");
+    // Verificar se o usuário atual é owner ou manager
+    const currentUserRole = currentUser.user_metadata?.role_name
+    if (currentUserRole !== 'owner' && currentUserRole !== 'manager') {
+      throw new Error('Sem permissão para criar usuários')
     }
 
-    // Verificar se o usuário tem permissão para criar usuários
-    const metadata = requestingUser.user_metadata || {};
-    const roleName = metadata.role_name;
+    // Pegar dados do body
+    const { user_email, user_password, user_metadata, send_email } = await req.json()
 
-    if (!["owner", "manager"].includes(roleName)) {
-      throw new Error("Você não tem permissão para criar usuários");
-    }
-
-    // Parsear dados do body
-    const { user_email, user_password, user_metadata, send_email } =
-      await req.json();
+    console.log('Creating user:', user_email, 'by:', currentUser.email)
 
     // Validações
-    if (!user_email || !user_password || !user_metadata) {
-      throw new Error("Dados incompletos");
+    if (!user_email || !user_password) {
+      throw new Error('Email e senha são obrigatórios')
     }
 
-    // Criar usuário via Admin API
-    const { data: newUser, error: createError } =
-      await supabaseAdmin.auth.admin.createUser({
-        email: user_email,
-        password: user_password,
-        email_confirm: !send_email, // Se enviar email, não confirma automaticamente
-        user_metadata: user_metadata,
-      });
+    if (!user_metadata || !user_metadata.role_name) {
+      throw new Error('role_name é obrigatório no metadata')
+    }
+
+    // Criar usuário usando Admin API
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email: user_email,
+      password: user_password,
+      email_confirm: !send_email, // Se send_email = false, auto-confirmar
+      user_metadata: {
+        ...user_metadata,
+        created_by: currentUser.id,
+        created_at: new Date().toISOString(),
+      },
+    })
 
     if (createError) {
-      throw createError;
+      console.error('Error creating user:', createError)
+      throw createError
     }
 
-    // Retornar sucesso
+    console.log('User created successfully:', newUser.user?.id)
+
+    // Criar log de auditoria
+    if (user_metadata.brand_id) {
+      await supabaseAdmin
+        .from('audit_logs')
+        .insert({
+          user_id: currentUser.id,
+          brand_id: user_metadata.brand_id,
+          restaurant_id: user_metadata.restaurant_id,
+          action: 'create_user',
+          resource_type: 'user',
+          resource_id: newUser.user?.id,
+          new_value: {
+            email: user_email,
+            role_name: user_metadata.role_name,
+            created_by: currentUser.email,
+          },
+        })
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        user: newUser,
-        message: "Usuário criado com sucesso",
+        user: {
+          id: newUser.user?.id,
+          email: newUser.user?.email,
+        },
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       }
-    );
+    )
+
   } catch (error) {
+    console.error('Error in create-user-admin:', error)
+
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message,
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       }
-    );
+    )
   }
-});
+})
