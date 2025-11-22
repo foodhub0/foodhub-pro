@@ -4,14 +4,34 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Search, MoreVertical } from "lucide-react";
+import { UserPlus, Search, MoreVertical, Key, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { useBrand } from "@/contexts/BrandContext";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +60,17 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Reset Password Dialog
+  const [resetPasswordDialog, setResetPasswordDialog] = useState(false);
+  const [selectedUserForReset, setSelectedUserForReset] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
+
+  // Delete Dialog
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [selectedUserForDelete, setSelectedUserForDelete] = useState<User | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     if (!brandLoading) {
       if (brand) {
@@ -54,24 +85,20 @@ const Users = () => {
     try {
       setLoading(true);
 
-      // Buscar usuários via função RPC ou API admin
-      // Por enquanto, mock de dados
-      const mockUsers: User[] = [
-        {
-          id: "1",
-          email: "owner@foodhub.com",
-          raw_user_meta_data: {
-            name: "Proprietário",
-            role_name: "owner",
-            role_display_name: "Dono",
-            role_color: "#8b5cf6",
-            is_active: true,
-          },
-          created_at: new Date().toISOString(),
-        },
-      ];
+      // Buscar usuários via Edge Function
+      const { data, error } = await supabase.functions.invoke('list-users-admin');
 
-      setUsers(mockUsers);
+      if (error) {
+        throw error;
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Erro ao carregar usuários');
+      }
+
+      if (data && data.users) {
+        setUsers(data.users);
+      }
     } catch (error: any) {
       toast({
         title: "Erro ao carregar usuários",
@@ -92,6 +119,107 @@ const Users = () => {
 
   const getRoleBadgeColor = (color?: string) => {
     return color || "#6b7280";
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedUserForReset || !newPassword) return;
+
+    try {
+      setResetting(true);
+
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: {
+          user_id: selectedUserForReset.id,
+          new_password: newPassword,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Erro ao resetar senha');
+      }
+
+      toast({
+        title: "✅ Senha resetada!",
+        description: `A senha de ${selectedUserForReset.raw_user_meta_data?.name || selectedUserForReset.email} foi alterada com sucesso.`,
+      });
+
+      setResetPasswordDialog(false);
+      setSelectedUserForReset(null);
+      setNewPassword("");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao resetar senha",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUserForDelete) return;
+
+    try {
+      setDeleting(true);
+
+      const { data, error } = await supabase.functions.invoke('delete-user-admin', {
+        body: {
+          user_id: selectedUserForDelete.id,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Erro ao deletar usuário');
+      }
+
+      toast({
+        title: "✅ Usuário deletado!",
+        description: `${selectedUserForDelete.raw_user_meta_data?.name || selectedUserForDelete.email} foi removido com sucesso.`,
+      });
+
+      setDeleteDialog(false);
+      setSelectedUserForDelete(null);
+
+      // Recarregar lista
+      loadUsers();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao deletar usuário",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let pass = '';
+    for (let i = 0; i < 12; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewPassword(pass);
+  };
+
+  const openResetPasswordDialog = (user: User) => {
+    setSelectedUserForReset(user);
+    setNewPassword("");
+    setResetPasswordDialog(true);
+  };
+
+  const openDeleteDialog = (user: User) => {
+    setSelectedUserForDelete(user);
+    setDeleteDialog(true);
   };
 
   if (brandLoading || loading) {
@@ -214,6 +342,18 @@ const Users = () => {
                               Permissões
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => openResetPasswordDialog(user)}>
+                            <Key className="h-4 w-4 mr-2" />
+                            Resetar Senha
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => openDeleteDialog(user)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir Usuário
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
@@ -223,6 +363,81 @@ const Users = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Reset Password Dialog */}
+        <Dialog open={resetPasswordDialog} onOpenChange={setResetPasswordDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Resetar Senha</DialogTitle>
+              <DialogDescription>
+                Defina uma nova senha para {selectedUserForReset?.raw_user_meta_data?.name || selectedUserForReset?.email}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nova Senha</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="new-password"
+                    type="text"
+                    placeholder="Mínimo 6 caracteres"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    disabled={resetting}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={generatePassword}
+                    disabled={resetting}
+                  >
+                    Gerar
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setResetPasswordDialog(false)}
+                disabled={resetting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleResetPassword}
+                disabled={resetting || !newPassword || newPassword.length < 6}
+              >
+                {resetting ? "Resetando..." : "Resetar Senha"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete User Dialog */}
+        <AlertDialog open={deleteDialog} onOpenChange={setDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir o usuário <strong>{selectedUserForDelete?.raw_user_meta_data?.name || selectedUserForDelete?.email}</strong>?
+                <br />
+                <br />
+                Esta ação não pode ser desfeita. O usuário será permanentemente removido do sistema.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteUser}
+                disabled={deleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting ? "Excluindo..." : "Excluir Usuário"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

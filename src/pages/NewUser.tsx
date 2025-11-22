@@ -43,7 +43,7 @@ const NewUser = () => {
   const [roleId, setRoleId] = useState("");
   const [restaurantId, setRestaurantId] = useState<string>("");
   const [isActive, setIsActive] = useState(true);
-  const [sendInviteEmail, setSendInviteEmail] = useState(true);
+  const [sendInviteEmail, setSendInviteEmail] = useState(false);
 
   useEffect(() => {
     loadRoles();
@@ -343,7 +343,7 @@ const NewUser = () => {
                 <div className="space-y-0.5">
                   <Label htmlFor="send-email">Enviar E-mail de Boas-vindas</Label>
                   <p className="text-sm text-muted-foreground">
-                    Envia credenciais de acesso por e-mail
+                    Por padrão o usuário é ativado imediatamente. Marque para enviar email de confirmação.
                   </p>
                 </div>
                 <Switch
