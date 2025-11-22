@@ -71,59 +71,89 @@ export const BrandProvider = ({ children }: BrandProviderProps) => {
 
       console.log('[BrandContext] Initial brand_id from metadata:', brandId);
 
-      // Se não tem brand_id no metadata, tentar buscar pelo restaurante do owner
+      // Se não tem brand_id no metadata, tentar encontrar ou criar uma marca
       if (!brandId) {
-        console.log('[BrandContext] Trying to fetch brand_id from restaurant...');
-        const { data: restaurant, error: restaurantError } = await supabase
-          .from('restaurants')
-          .select('id, brand_id, name, slug')
+        console.log('[BrandContext] No brand_id in metadata, checking for existing brand...');
+
+        // Primeiro, verificar se já existe uma marca do usuário
+        const { data: existingBrands } = await supabase
+          .from('brands')
+          .select('*')
           .eq('owner_id', user.id)
-          .single();
+          .limit(1);
 
-        console.log('[BrandContext] Restaurant query result:', restaurant, restaurantError);
+        console.log('[BrandContext] Existing brands:', existingBrands);
 
-        if (restaurant) {
-          brandId = restaurant.brand_id;
-          console.log('[BrandContext] Found brand_id from restaurant:', brandId);
+        if (existingBrands && existingBrands.length > 0) {
+          // Encontrou marca existente
+          brandId = existingBrands[0].id;
+          console.log('[BrandContext] Found existing brand:', brandId);
 
-          // Se o restaurante existe mas não tem brand_id, criar uma marca automaticamente
-          if (!brandId) {
-            console.log('[BrandContext] Restaurant has no brand_id, creating brand...');
-            const { data: newBrand, error: createBrandError } = await supabase
-              .from('brands')
-              .insert({
-                owner_id: user.id,
-                name: restaurant.name,
-                slug: restaurant.slug,
-              })
-              .select()
-              .single();
+          // Atualizar metadata do usuário
+          await supabase.auth.updateUser({
+            data: {
+              ...metadata,
+              brand_id: brandId,
+              role_name: roleName || 'owner',
+            }
+          });
+        } else {
+          // Não tem marca, verificar se tem restaurante para criar marca
+          console.log('[BrandContext] No existing brand, checking for restaurant...');
+          const { data: restaurant, error: restaurantError } = await supabase
+            .from('restaurants')
+            .select('id, brand_id, name, slug')
+            .eq('owner_id', user.id)
+            .single();
 
-            if (createBrandError) {
-              console.error('[BrandContext] Error creating brand:', createBrandError);
-            } else if (newBrand) {
-              console.log('[BrandContext] Brand created:', newBrand.id);
-              brandId = newBrand.id;
+          console.log('[BrandContext] Restaurant query result:', restaurant, restaurantError);
 
-              // Atualizar o restaurante com o brand_id
-              const { error: updateRestaurantError } = await supabase
-                .from('restaurants')
-                .update({ brand_id: newBrand.id, restaurant_index: 1 })
-                .eq('id', restaurant.id);
+          if (restaurant) {
+            if (restaurant.brand_id) {
+              // Restaurante já tem brand_id
+              brandId = restaurant.brand_id;
+              console.log('[BrandContext] Restaurant has brand_id:', brandId);
+            } else {
+              // Restaurante existe mas não tem brand_id - criar marca
+              console.log('[BrandContext] Restaurant has no brand_id, creating brand...');
+              const { data: newBrand, error: createBrandError } = await supabase
+                .from('brands')
+                .insert({
+                  owner_id: user.id,
+                  name: restaurant.name,
+                  slug: restaurant.slug,
+                })
+                .select()
+                .single();
 
-              if (updateRestaurantError) {
-                console.error('[BrandContext] Error updating restaurant with brand_id:', updateRestaurantError);
+              if (createBrandError) {
+                console.error('[BrandContext] Error creating brand:', createBrandError);
+              } else if (newBrand) {
+                console.log('[BrandContext] Brand created:', newBrand.id);
+                brandId = newBrand.id;
+
+                // Atualizar o restaurante com o brand_id
+                const { error: updateRestaurantError } = await supabase
+                  .from('restaurants')
+                  .update({ brand_id: newBrand.id, restaurant_index: 1 })
+                  .eq('id', restaurant.id);
+
+                if (updateRestaurantError) {
+                  console.error('[BrandContext] Error updating restaurant with brand_id:', updateRestaurantError);
+                }
               }
+            }
 
-              // Atualizar o metadata do usuário com o brand_id
+            // Atualizar o metadata do usuário com o brand_id
+            if (brandId) {
               await supabase.auth.updateUser({
                 data: {
                   ...metadata,
-                  brand_id: newBrand.id,
-                  role_name: 'owner',
+                  brand_id: brandId,
+                  role_name: roleName || 'owner',
                 }
               });
-              console.log('[BrandContext] User metadata updated with brand_id');
+              console.log('[BrandContext] User metadata updated with brand_id:', brandId);
             }
           }
         }
