@@ -1,5 +1,18 @@
 # 🚀 Deploy da Edge Function: create-user-admin
 
+## 🔧 ATUALIZAÇÃO IMPORTANTE
+
+**A Edge Function foi corrigida para resolver o erro "Auth session missing!"**
+
+A correção:
+- Agora extrai o JWT token do header Authorization corretamente
+- Passa o token diretamente para `getUser(token)` ao invés de usar global headers
+- Adiciona melhor logging para debug
+
+**Você DEVE fazer o re-deploy para aplicar a correção!**
+
+---
+
 ## ⚡ QUICK START (3 Comandos)
 
 ```bash
@@ -11,6 +24,12 @@ supabase link --project-ref SEU_PROJECT_REF
 
 # 3. Deploy!
 supabase functions deploy create-user-admin
+```
+
+**OU use o script de deploy:**
+
+```bash
+./deploy-edge-function.sh
 ```
 
 ---
