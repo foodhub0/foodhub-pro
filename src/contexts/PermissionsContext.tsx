@@ -81,9 +81,37 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
       }
 
       const metadata = user.user_metadata || {};
-      const roleId = metadata.role_id;
+      let roleId = metadata.role_id;
+      const roleName = metadata.role_name;
+
+      console.log('[PermissionsContext] User metadata:', metadata);
+      console.log('[PermissionsContext] role_id:', roleId, 'role_name:', roleName);
+
+      // Se não tem role_id mas tem role_name, buscar role_id pelo nome
+      if (!roleId && roleName) {
+        console.log('[PermissionsContext] No role_id, fetching by role_name:', roleName);
+        const { data: roleByName } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('name', roleName)
+          .single();
+
+        if (roleByName) {
+          roleId = roleByName.id;
+          console.log('[PermissionsContext] Found role_id:', roleId);
+
+          // Atualizar metadata com role_id
+          await supabase.auth.updateUser({
+            data: {
+              ...metadata,
+              role_id: roleId,
+            }
+          });
+        }
+      }
 
       if (!roleId) {
+        console.log('[PermissionsContext] No role found for user');
         setRole(null);
         setPermissions([]);
         setIsLoading(false);
