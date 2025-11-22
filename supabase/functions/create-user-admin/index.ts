@@ -25,6 +25,11 @@ serve(async (req) => {
       throw new Error('Sem autorização')
     }
 
+    console.log('Authorization header present:', authHeader.substring(0, 20) + '...')
+
+    // Extrair JWT token do header
+    const token = authHeader.replace('Bearer ', '')
+
     // Criar cliente Supabase com service role (admin)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -40,16 +45,11 @@ serve(async (req) => {
     // Criar cliente normal para verificar quem está chamando
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
-    // Verificar se o usuário atual está autenticado
-    const { data: { user: currentUser }, error: authError } = await supabaseClient.auth.getUser()
+    // Verificar se o usuário atual está autenticado (passar JWT diretamente)
+    const { data: { user: currentUser }, error: authError } = await supabaseClient.auth.getUser(token)
 
     if (authError) {
       console.error('Auth error:', authError)
