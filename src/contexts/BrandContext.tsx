@@ -211,7 +211,24 @@ export const BrandProvider = ({ children }: BrandProviderProps) => {
           // Outros roles: apenas seu restaurante vinculado
           const restaurantId = metadata.restaurant_id;
           const found = restaurantsData.find(r => r.id === restaurantId);
-          setCurrentRestaurant(found || null);
+
+          if (found) {
+            setCurrentRestaurant(found);
+          } else if (restaurantsData.length > 0) {
+            // Fallback: se não tem restaurant_id válido, usar o primeiro restaurante da marca
+            console.log('[BrandContext] User has no valid restaurant_id, using first restaurant as fallback');
+            setCurrentRestaurant(restaurantsData[0]);
+
+            // Atualizar metadata do usuário com o restaurant_id correto
+            await supabase.auth.updateUser({
+              data: {
+                ...metadata,
+                restaurant_id: restaurantsData[0].id,
+              }
+            });
+          } else {
+            setCurrentRestaurant(null);
+          }
         }
       }
     } catch (error) {
