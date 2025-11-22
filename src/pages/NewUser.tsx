@@ -389,22 +389,6 @@ const NewUser = () => {
             </Button>
           </div>
         </form>
-
-        {/* Aviso sobre Edge Function */}
-        <Card className="mt-6 border-blue-200 bg-blue-50 dark:bg-blue-950/20">
-          <CardContent className="pt-6">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>ℹ️ Nota Técnica:</strong> Para que a criação de usuários funcione, você precisa
-              fazer o deploy da Edge Function:
-            </p>
-            <code className="block mt-2 p-2 bg-blue-100 dark:bg-blue-900 rounded text-xs">
-              supabase functions deploy create-user-admin
-            </code>
-            <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
-              A Edge Function está em: <code>supabase/functions/create-user-admin/index.ts</code>
-            </p>
-          </CardContent>
-        </Card>
       </div>
     </Layout>
   );
