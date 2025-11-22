@@ -49,6 +49,13 @@ const NewUser = () => {
     loadRoles();
   }, []);
 
+  // Auto-selecionar restaurante se houver apenas um disponível
+  useEffect(() => {
+    if (requiresRestaurant && restaurants.length === 1 && !restaurantId) {
+      setRestaurantId(restaurants[0].id);
+    }
+  }, [requiresRestaurant, restaurants, restaurantId]);
+
   const loadRoles = async () => {
     try {
       setLoadingRoles(true);
@@ -107,15 +114,6 @@ const NewUser = () => {
       return;
     }
 
-    if (requiresRestaurant && !restaurantId) {
-      toast({
-        title: "Restaurante obrigatório",
-        description: "Este perfil requer que um restaurante seja selecionado.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (!password || password.length < 6) {
       toast({
         title: "Senha fraca",
@@ -128,6 +126,29 @@ const NewUser = () => {
     try {
       setLoading(true);
 
+      // Determinar restaurant_id a ser usado
+      let finalRestaurantId = restaurantId;
+
+      if (requiresRestaurant) {
+        if (!restaurantId) {
+          // Fallback: usar o primeiro restaurante disponível
+          if (restaurants.length > 0) {
+            finalRestaurantId = restaurants[0].id;
+            console.log('[NewUser] Using first restaurant as fallback:', finalRestaurantId);
+          } else {
+            toast({
+              title: "Restaurante obrigatório",
+              description: "Este perfil requer que um restaurante seja selecionado, mas não há restaurantes disponíveis.",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+        }
+      } else {
+        finalRestaurantId = null;
+      }
+
       // Preparar metadata do usuário
       const userMetadata = {
         name,
@@ -136,7 +157,7 @@ const NewUser = () => {
         role_display_name: selectedRole?.display_name,
         role_color: selectedRole?.color,
         brand_id: brand?.id,
-        restaurant_id: requiresRestaurant ? restaurantId : null,
+        restaurant_id: finalRestaurantId,
         is_active: isActive,
       };
 
