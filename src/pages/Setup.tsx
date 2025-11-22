@@ -54,29 +54,64 @@ const Setup = () => {
 
     setLoading(true);
 
-    const { error } = await supabase.from("restaurants").insert({
-      owner_id: userId,
-      name: formData.name,
-      slug: formData.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
-      description: formData.description,
-      phone: formData.phone,
-      email: formData.email,
-    });
+    try {
+      // Step 1: Create brand first
+      const brandSlug = formData.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      const { data: brand, error: brandError } = await supabase
+        .from("brands")
+        .insert({
+          owner_id: userId,
+          name: formData.name,
+          slug: brandSlug,
+        })
+        .select()
+        .single();
 
-    setLoading(false);
+      if (brandError) {
+        throw brandError;
+      }
 
-    if (error) {
-      toast({
-        title: "Erro ao criar restaurante",
-        description: error.message,
-        variant: "destructive",
+      // Step 2: Create restaurant with brand_id
+      const { error: restaurantError } = await supabase.from("restaurants").insert({
+        owner_id: userId,
+        brand_id: brand.id,
+        restaurant_index: 1,
+        name: formData.name,
+        slug: brandSlug,
+        description: formData.description,
+        phone: formData.phone,
+        email: formData.email,
       });
-    } else {
+
+      if (restaurantError) {
+        throw restaurantError;
+      }
+
+      // Step 3: Update user metadata with brand_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.auth.updateUser({
+          data: {
+            ...user.user_metadata,
+            brand_id: brand.id,
+            role_name: 'owner',
+          }
+        });
+      }
+
       toast({
         title: "Restaurante criado!",
         description: "Seu restaurante foi configurado com sucesso.",
       });
       navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar restaurante",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
