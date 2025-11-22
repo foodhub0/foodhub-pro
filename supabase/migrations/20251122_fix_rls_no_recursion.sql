@@ -1,79 +1,73 @@
--- Migration: Fix RLS policies to avoid auth.users access errors
+-- Migration: Fix RLS policies to avoid infinite recursion
 -- Created: 2025-11-22
--- Description: Fixes RLS policies that were causing "permission denied for table users" error
+-- Description: Simplifies RLS policies to avoid circular dependencies between brands and restaurants
 
 -- ============================================================================
--- 1. FIX BRANDS RLS POLICIES
+-- 1. FIX BRANDS RLS POLICIES - SIMPLE, NO RECURSION
 -- ============================================================================
 
--- Drop problematic policy
+-- Drop all existing brand policies
 DROP POLICY IF EXISTS "Users can view brands they own or belong to" ON public.brands;
 DROP POLICY IF EXISTS "Users can view brands they belong to" ON public.brands;
+DROP POLICY IF EXISTS "Owners can insert brands" ON public.brands;
+DROP POLICY IF EXISTS "Owners can update their brands" ON public.brands;
+DROP POLICY IF EXISTS "Owners can delete their brands" ON public.brands;
 
--- Create corrected policy for SELECT (without accessing auth.users)
-CREATE POLICY "Users can view brands they own or belong to"
+-- Simple SELECT policy - only check owner_id, no subqueries
+CREATE POLICY "Users can view their own brands"
   ON public.brands FOR SELECT
   TO authenticated
-  USING (
-    owner_id = auth.uid()
-    OR id IN (
-      SELECT brand_id FROM public.restaurants WHERE owner_id = auth.uid()
-    )
-  );
+  USING (owner_id = auth.uid());
 
--- Ensure other brand policies exist
-DROP POLICY IF EXISTS "Owners can insert brands" ON public.brands;
-CREATE POLICY "Owners can insert brands"
+-- INSERT policy
+CREATE POLICY "Users can insert their own brands"
   ON public.brands FOR INSERT
   TO authenticated
   WITH CHECK (owner_id = auth.uid());
 
-DROP POLICY IF EXISTS "Owners can update their brands" ON public.brands;
-CREATE POLICY "Owners can update their brands"
+-- UPDATE policy
+CREATE POLICY "Users can update their own brands"
   ON public.brands FOR UPDATE
   TO authenticated
   USING (owner_id = auth.uid())
   WITH CHECK (owner_id = auth.uid());
 
-DROP POLICY IF EXISTS "Owners can delete their brands" ON public.brands;
-CREATE POLICY "Owners can delete their brands"
+-- DELETE policy
+CREATE POLICY "Users can delete their own brands"
   ON public.brands FOR DELETE
   TO authenticated
   USING (owner_id = auth.uid());
 
 -- ============================================================================
--- 2. FIX RESTAURANTS RLS POLICIES
+-- 2. FIX RESTAURANTS RLS POLICIES - SIMPLE, NO RECURSION
 -- ============================================================================
 
--- Drop and recreate restaurants SELECT policy
+-- Drop all existing restaurant policies
 DROP POLICY IF EXISTS "Users can view restaurants of their brand" ON public.restaurants;
-CREATE POLICY "Users can view restaurants of their brand"
+DROP POLICY IF EXISTS "Users can insert their own restaurants" ON public.restaurants;
+DROP POLICY IF EXISTS "Users can update their own restaurants" ON public.restaurants;
+DROP POLICY IF EXISTS "Users can delete their own restaurants" ON public.restaurants;
+
+-- Simple SELECT policy - only check owner_id, no subqueries
+CREATE POLICY "Users can view their own restaurants"
   ON public.restaurants FOR SELECT
   TO authenticated
-  USING (
-    owner_id = auth.uid()
-    OR brand_id IN (
-      SELECT id FROM public.brands WHERE owner_id = auth.uid()
-    )
-  );
+  USING (owner_id = auth.uid());
 
--- Ensure INSERT policy exists for restaurants
-DROP POLICY IF EXISTS "Users can insert their own restaurants" ON public.restaurants;
+-- INSERT policy
 CREATE POLICY "Users can insert their own restaurants"
   ON public.restaurants FOR INSERT
   TO authenticated
   WITH CHECK (owner_id = auth.uid());
 
--- Ensure UPDATE policy exists for restaurants
-DROP POLICY IF EXISTS "Users can update their own restaurants" ON public.restaurants;
+-- UPDATE policy
 CREATE POLICY "Users can update their own restaurants"
   ON public.restaurants FOR UPDATE
   TO authenticated
   USING (owner_id = auth.uid())
   WITH CHECK (owner_id = auth.uid());
 
--- Ensure DELETE policy exists for restaurants
-DROP POLICY IF EXISTS "Users can delete their own restaurants" ON public.restaurants;
+-- DELETE policy
 CREATE POLICY "Users can delete their own restaurants"
   ON public.restaurants FOR DELETE
   TO authenticated
