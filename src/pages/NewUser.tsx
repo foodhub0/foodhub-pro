@@ -30,7 +30,7 @@ interface Role {
 const NewUser = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { brand, restaurants } = useBrand();
+  const { brand, restaurants, isLoading: brandLoading } = useBrand();
 
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -49,12 +49,15 @@ const NewUser = () => {
     loadRoles();
   }, []);
 
+  const selectedRole = roles.find(r => r.id === roleId);
+  const requiresRestaurant = selectedRole && selectedRole.name !== 'owner';
+
   // Auto-selecionar restaurante se houver apenas um disponível
   useEffect(() => {
     if (requiresRestaurant && restaurants.length === 1 && !restaurantId) {
       setRestaurantId(restaurants[0].id);
     }
-  }, [requiresRestaurant, restaurants, restaurantId]);
+  }, [requiresRestaurant, restaurants.length, restaurantId]);
 
   const loadRoles = async () => {
     try {
@@ -79,9 +82,6 @@ const NewUser = () => {
       setLoadingRoles(false);
     }
   };
-
-  const selectedRole = roles.find(r => r.id === roleId);
-  const requiresRestaurant = selectedRole && selectedRole.name !== 'owner';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,11 +212,30 @@ const NewUser = () => {
     setPassword(pass);
   };
 
-  if (loadingRoles) {
+  // Aguardar tanto os roles quanto o brand context carregarem
+  if (loadingRoles || brandLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Verificar se brand está disponível
+  if (!brand) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="max-w-md p-6">
+            <p className="text-center text-muted-foreground mb-4">
+              Nenhuma marca encontrada. Por favor, configure seu restaurante primeiro.
+            </p>
+            <Button onClick={() => navigate("/restaurant")} className="w-full">
+              Ir para Configurações
+            </Button>
+          </Card>
         </div>
       </Layout>
     );
