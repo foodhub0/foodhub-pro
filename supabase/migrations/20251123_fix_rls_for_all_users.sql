@@ -12,8 +12,8 @@ DROP POLICY IF EXISTS "restaurants_insert_policy" ON public.restaurants;
 DROP POLICY IF EXISTS "restaurants_update_policy" ON public.restaurants;
 DROP POLICY IF EXISTS "restaurants_delete_policy" ON public.restaurants;
 
--- Criar função para obter brand_id do usuário atual
-CREATE OR REPLACE FUNCTION auth.get_user_brand_id()
+-- Criar função para obter brand_id do usuário atual (no schema public)
+CREATE OR REPLACE FUNCTION public.get_user_brand_id()
 RETURNS uuid
 LANGUAGE sql
 SECURITY DEFINER
@@ -31,7 +31,7 @@ CREATE POLICY "brands_select_for_brand_users"
   ON public.brands FOR SELECT
   TO authenticated
   USING (
-    id = auth.get_user_brand_id() OR
+    id = public.get_user_brand_id() OR
     owner_id = auth.uid()
   );
 
@@ -44,11 +44,11 @@ CREATE POLICY "brands_update_for_brand_users"
   ON public.brands FOR UPDATE
   TO authenticated
   USING (
-    id = auth.get_user_brand_id() OR
+    id = public.get_user_brand_id() OR
     owner_id = auth.uid()
   )
   WITH CHECK (
-    id = auth.get_user_brand_id() OR
+    id = public.get_user_brand_id() OR
     owner_id = auth.uid()
   );
 
@@ -62,7 +62,7 @@ CREATE POLICY "restaurants_select_for_brand_users"
   ON public.restaurants FOR SELECT
   TO authenticated
   USING (
-    brand_id = auth.get_user_brand_id() OR
+    brand_id = public.get_user_brand_id() OR
     owner_id = auth.uid()
   );
 
@@ -70,7 +70,7 @@ CREATE POLICY "restaurants_insert_for_brand_users"
   ON public.restaurants FOR INSERT
   TO authenticated
   WITH CHECK (
-    brand_id = auth.get_user_brand_id() OR
+    brand_id = public.get_user_brand_id() OR
     owner_id = auth.uid()
   );
 
@@ -78,11 +78,11 @@ CREATE POLICY "restaurants_update_for_brand_users"
   ON public.restaurants FOR UPDATE
   TO authenticated
   USING (
-    brand_id = auth.get_user_brand_id() OR
+    brand_id = public.get_user_brand_id() OR
     owner_id = auth.uid()
   )
   WITH CHECK (
-    brand_id = auth.get_user_brand_id() OR
+    brand_id = public.get_user_brand_id() OR
     owner_id = auth.uid()
   );
 
@@ -92,6 +92,6 @@ CREATE POLICY "restaurants_delete_for_owners"
   USING (owner_id = auth.uid());
 
 -- Comentários
-COMMENT ON FUNCTION auth.get_user_brand_id() IS 'Retorna o brand_id do metadata do usuário autenticado';
+COMMENT ON FUNCTION public.get_user_brand_id() IS 'Retorna o brand_id do metadata do usuário autenticado';
 COMMENT ON POLICY "brands_select_for_brand_users" ON public.brands IS 'Permite que todos os usuários da marca vejam a brand';
 COMMENT ON POLICY "restaurants_select_for_brand_users" ON public.restaurants IS 'Permite que todos os usuários da marca vejam os restaurantes';
