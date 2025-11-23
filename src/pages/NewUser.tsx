@@ -49,12 +49,15 @@ const NewUser = () => {
     loadRoles();
   }, []);
 
+  const selectedRole = roles.find(r => r.id === roleId);
+  const requiresRestaurant = selectedRole && selectedRole.name !== 'owner';
+
   // Auto-selecionar restaurante se houver apenas um disponível
   useEffect(() => {
     if (requiresRestaurant && restaurants.length === 1 && !restaurantId) {
       setRestaurantId(restaurants[0].id);
     }
-  }, [requiresRestaurant, restaurants, restaurantId]);
+  }, [requiresRestaurant, restaurants.length, restaurantId]);
 
   const loadRoles = async () => {
     try {
@@ -79,9 +82,6 @@ const NewUser = () => {
       setLoadingRoles(false);
     }
   };
-
-  const selectedRole = roles.find(r => r.id === roleId);
-  const requiresRestaurant = selectedRole && selectedRole.name !== 'owner';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
