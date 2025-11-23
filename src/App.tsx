@@ -37,6 +37,7 @@ import BrandDashboard from "./pages/BrandDashboard";
 import WaiterOrders from "./pages/WaiterOrders";
 import Reception from "./pages/Reception";
 import AddonGroups from "./pages/AddonGroups";
+import Restaurants from "./pages/Restaurants";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,14 @@ const App = () => (
                     element={
                       <RoleGuard roles={['owner']}>
                         <BrandDashboard />
+                      </RoleGuard>
+                    }
+                  />
+                  <Route
+                    path="/restaurants"
+                    element={
+                      <RoleGuard roles={['owner']}>
+                        <Restaurants />
                       </RoleGuard>
                     }
                   />

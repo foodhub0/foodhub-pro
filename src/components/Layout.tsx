@@ -63,6 +63,7 @@ const Layout = ({ children }: LayoutProps) => {
     // Início (Dashboard da Marca - apenas Owner)
     if (isOwner()) {
       items.push({ icon: Building2, label: "Início", path: "/brand-dashboard" });
+      items.push({ icon: Layers, label: "Restaurantes", path: "/restaurants" });
     }
 
     // Dashboard (todos exceto Garçom)
