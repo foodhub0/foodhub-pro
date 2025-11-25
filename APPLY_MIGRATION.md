@@ -1,73 +1,97 @@
-# Como Aplicar a Migration de Correção RLS
+# 🚨 CORREÇÃO URGENTE - Erro 403 Forbidden
 
-## Problema Identificado
+## ⚠️ Problema Atual
 
-Usuários criados por owners não conseguem fazer login porque as políticas RLS (Row Level Security) das tabelas `brands` e `restaurants` só permitem acesso quando `owner_id = auth.uid()`.
+**ERRO 403** ao tentar fazer login - usuários não conseguem acessar o sistema!
 
-Isso impede que usuários com role "manager" (ou outros roles) vejam os brands e restaurantes aos quais pertencem através do `brand_id` armazenado em seus metadados.
+```
+Failed to load resource: the server responded with a status of 403
+[BrandContext] Existing brands: null
+[BrandContext] Restaurant query result: null
+```
 
-## Solução
+As políticas RLS (Row Level Security) estão **bloqueando completamente** o acesso às tabelas `brands` e `restaurants`.
 
-Foi criada a migration `20251125_fix_brand_rls_for_non_owners.sql` que:
+---
 
-1. Remove as políticas RLS atuais que são muito restritivas
-2. Cria novas políticas que permitem:
-   - Owners ver seus próprios brands/restaurants (`owner_id = auth.uid()`)
-   - Usuários não-owners ver brands/restaurants onde o `brand_id` corresponde ao armazenado em seus metadados
+## ✅ SOLUÇÃO RÁPIDA (5 minutos)
 
-## Como Aplicar a Migration
+### **Execute o script SQL abaixo AGORA:**
 
-### Opção 1: Via Dashboard do Supabase (Recomendado)
+#### Passo 1️⃣: Acesse o Dashboard
+👉 **[Clique aqui para abrir o SQL Editor](https://app.supabase.com/project/wisikawnpzrrfzqutatl/sql/new)**
 
-1. Acesse o dashboard do Supabase: https://app.supabase.com/project/wisikawnpzrrfzqutatl
-2. Navegue até **SQL Editor** no menu lateral
-3. Clique em **New query**
-4. Copie todo o conteúdo do arquivo `supabase/migrations/20251125_fix_brand_rls_for_non_owners.sql`
-5. Cole no editor SQL
-6. Clique em **Run** ou pressione `Ctrl+Enter`
-7. Verifique os logs de sucesso que aparecem na parte inferior
+#### Passo 2️⃣: Copie o Script
+Abra o arquivo **`FIX_RLS_NOW.sql`** na raiz do projeto
 
-### Opção 2: Via Supabase CLI
+#### Passo 3️⃣: Execute
+1. Cole todo o conteúdo no SQL Editor
+2. Clique em **RUN** ou pressione `Ctrl+Enter`
+3. Aguarde a mensagem de sucesso:
+   ```
+   ✓ SUCESSO! Todas as políticas foram criadas
+   ✓ Usuários podem fazer login agora
+   ```
 
-Se você tiver o Supabase CLI configurado e autenticado:
+#### Passo 4️⃣: Teste
+Recarregue a página de login e tente entrar novamente
+
+---
+
+## 📋 O que o Script Faz
+
+1. ❌ Remove **todas** as políticas RLS antigas que estão causando erro 403
+2. ✅ Cria novas políticas que permitem:
+   - **Owners**: Acessar seus próprios brands/restaurants
+   - **Usuários não-owners**: Acessar através do `brand_id` no metadata
+3. 🔒 Mantém segurança: Apenas owners podem INSERT/UPDATE/DELETE
+
+---
+
+## 🔍 Detalhes Técnicos
+
+### Políticas Criadas
+
+**Brands (4 políticas):**
+- `brands_select_policy` - Permite SELECT para owners e usuários com brand_id
+- `brands_insert_policy` - INSERT apenas para owners
+- `brands_update_policy` - UPDATE apenas para owners
+- `brands_delete_policy` - DELETE apenas para owners
+
+**Restaurants (4 políticas):**
+- `restaurants_select_policy` - Permite SELECT para owners e usuários com brand_id
+- `restaurants_insert_policy` - INSERT apenas para owners
+- `restaurants_update_policy` - UPDATE apenas para owners
+- `restaurants_delete_policy` - DELETE apenas para owners
+
+---
+
+## ⚡ Método Alternativo (CLI)
+
+Se você tiver o Supabase CLI autenticado:
 
 ```bash
 npx supabase db push
 ```
 
-## Verificação
+---
 
-Após aplicar a migration, você verá mensagens como:
+## 🧪 Após Aplicar - Como Verificar
 
+### ✅ Mensagem de Sucesso no SQL Editor:
 ```
-========================================
-   MIGRAÇÃO CONCLUÍDA COM SUCESSO
-========================================
-Políticas de brands criadas: 4
-Políticas de restaurants criadas: 4
-
-✓ Usuários não-owners agora podem acessar
-  brands e restaurants através do brand_id
-  armazenado em seus metadados
-========================================
+✓ SUCESSO! Todas as políticas foram criadas
+✓ Usuários podem fazer login agora
 ```
 
-## Teste
+### ✅ No Console do Navegador (F12):
+- ❌ Não deve aparecer mais: `Failed to load resource: 403`
+- ✅ Deve aparecer: `[BrandContext] Brand query result: [Object]`
+- ✅ Login deve funcionar normalmente
 
-1. Peça para o usuário que estava com problema tentar fazer login novamente
-2. O usuário deve conseguir acessar normalmente o sistema
-3. Verifique no console do navegador que não há mais erros de "Brand query result: Object null"
+---
 
-## Políticas Criadas
+## 📁 Arquivos Relacionados
 
-### Brands
-- **brands_select_policy**: Permite SELECT para owners e usuários com brand_id no metadata
-- **brands_insert_policy**: Permite INSERT apenas para owners
-- **brands_update_policy**: Permite UPDATE apenas para owners
-- **brands_delete_policy**: Permite DELETE apenas para owners
-
-### Restaurants
-- **restaurants_select_policy**: Permite SELECT para owners e usuários com brand_id correspondente
-- **restaurants_insert_policy**: Permite INSERT apenas para owners
-- **restaurants_update_policy**: Permite UPDATE apenas para owners
-- **restaurants_delete_policy**: Permite DELETE apenas para owners
+- **`FIX_RLS_NOW.sql`** - Script para executar agora
+- **`supabase/migrations/20251125_fix_brand_rls_for_non_owners.sql`** - Migration versionada
