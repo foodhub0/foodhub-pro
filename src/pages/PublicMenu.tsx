@@ -461,36 +461,46 @@ const PublicMenu = () => {
 
       {/* Conteúdo Principal */}
       <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
-        {/* Seção Destaques */}
+        {/* Seção Destaques - Scroll Horizontal Estilo iFood */}
         {featuredProducts.length > 0 && !searchQuery && !selectedCategory && (
-          <div className="mb-8">
-            <h2 className="text-xl font-bold text-foreground mb-4">DESTAQUES</h2>
-            <div className="grid grid-cols-3 gap-2 sm:gap-4">
-              {featuredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  onClick={() => handleProductClick(product)}
-                  className="cursor-pointer group"
-                >
-                  <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 bg-gray-200">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-                        <span className="text-2xl sm:text-4xl text-gray-400">🍕</span>
+          <div className="mb-8 -mx-4">
+            <h2 className="text-xl font-bold text-foreground mb-4 px-4">DESTAQUES</h2>
+            <div className="overflow-x-auto scrollbar-hide px-4">
+              <div className="flex gap-4 pb-2">
+                {featuredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    onClick={() => handleProductClick(product)}
+                    className="cursor-pointer group flex-shrink-0 w-44"
+                  >
+                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-3 bg-gray-200 shadow-md">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/10">
+                          <span className="text-5xl opacity-40">🍕</span>
+                        </div>
+                      )}
+                      {/* Badge de Destaque */}
+                      <div className="absolute top-2 left-2">
+                        <Badge className="bg-yellow-500 text-yellow-950 border-0 shadow-sm">
+                          ⭐ Destaque
+                        </Badge>
                       </div>
-                    )}
+                    </div>
+                    <h3 className="font-semibold text-foreground mb-1 text-sm line-clamp-2 min-h-[2.5rem]">
+                      {product.name}
+                    </h3>
+                    <p className="font-bold text-primary text-base">
+                      {formatCurrency(product.price || product.base_price)}
+                    </p>
                   </div>
-                  <p className="font-semibold text-foreground mb-1 text-xs sm:text-base">
-                    {formatCurrency(product.price || product.base_price)}
-                  </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">{product.name}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -514,48 +524,47 @@ const PublicMenu = () => {
               <h2 className="text-lg font-bold text-foreground mb-4 uppercase">
                 {category.name}
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {categoryProducts.map((product, index) => (
                   <div
                     key={product.id}
                     onClick={() => handleProductClick(product)}
-                    className="group flex items-start gap-4 bg-card p-4 border-b border-border hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer"
+                    className="group flex items-start gap-4 bg-card p-3 rounded-xl border border-border hover:shadow-md hover:border-primary/20 transition-all duration-200 cursor-pointer"
                   >
                     <div className="flex-1 min-w-0">
                       {index === 0 && (
-                        <Badge variant="outline" className="mb-2 text-xs font-medium">
-                          Popular
+                        <Badge variant="outline" className="mb-2 text-xs font-medium border-primary/30 text-primary">
+                          🔥 Mais pedido
                         </Badge>
                       )}
-                      <h3 className="font-semibold text-foreground mb-1 line-clamp-1">
+                      <h3 className="font-semibold text-foreground mb-1.5 line-clamp-1 group-hover:text-primary transition-colors">
                         {product.name}
                       </h3>
                       {product.description && (
-                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
                           {product.description}
                         </p>
                       )}
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">
+                      <p className="font-bold text-foreground text-base">
                         {formatCurrency(product.price || product.base_price)}
                       </p>
                     </div>
 
-                    <div className="relative flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
+                    <div className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-sm">
                       {product.image_url ? (
                         <img
                           src={product.image_url}
                           alt={product.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-2xl opacity-30">🍽️</span>
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800">
+                          <span className="text-3xl opacity-40">🍽️</span>
                         </div>
                       )}
                       <Button
                         size="icon"
-                        variant="secondary"
-                        className="absolute bottom-1.5 right-1.5 h-7 w-7 rounded-full shadow-sm"
+                        className="absolute bottom-2 right-2 h-8 w-8 rounded-full shadow-lg bg-white hover:bg-white/90 text-primary hover:text-primary border-2 border-white group-hover:scale-110 transition-transform"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleProductClick(product);
@@ -577,42 +586,42 @@ const PublicMenu = () => {
             <h2 className="text-lg font-bold text-foreground mb-4 uppercase">
               Outros Produtos
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {filteredProducts.filter(p => !p.category_id).map((product) => (
                 <div
                   key={product.id}
                   onClick={() => handleProductClick(product)}
-                  className="flex items-center gap-4 bg-card rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  className="group flex items-start gap-4 bg-card p-3 rounded-xl border border-border hover:shadow-md hover:border-primary/20 transition-all duration-200 cursor-pointer"
                 >
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground mb-1">
+                    <h3 className="font-semibold text-foreground mb-1.5 line-clamp-1 group-hover:text-primary transition-colors">
                       {product.name}
                     </h3>
                     {product.description && (
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
                         {product.description}
                       </p>
                     )}
-                    <p className="font-semibold text-foreground">
+                    <p className="font-bold text-foreground text-base">
                       {formatCurrency(product.price || product.base_price)}
                     </p>
                   </div>
 
-                  <div className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden bg-muted">
+                  <div className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-sm">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-                        <span className="text-3xl">🍕</span>
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800">
+                        <span className="text-3xl opacity-40">🍕</span>
                       </div>
                     )}
                     <Button
                       size="icon"
-                      className="absolute bottom-2 right-2 rounded-full h-8 w-8 shadow-lg bg-white hover:bg-gray-50 text-primary"
+                      className="absolute bottom-2 right-2 h-8 w-8 rounded-full shadow-lg bg-white hover:bg-white/90 text-primary hover:text-primary border-2 border-white group-hover:scale-110 transition-transform"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleProductClick(product);
