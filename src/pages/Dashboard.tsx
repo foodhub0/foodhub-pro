@@ -5,6 +5,8 @@ import { DollarSign, ShoppingBag, Clock, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
+import { useBrand } from "@/contexts/BrandContext";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface DashboardStats {
   totalSales: number;
@@ -16,6 +18,8 @@ interface DashboardStats {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentRestaurant, isLoading: brandLoading } = useBrand();
+  const { isOwner } = usePermissions();
   const [stats, setStats] = useState<DashboardStats>({
     totalSales: 0,
     totalOrders: 0,
@@ -27,7 +31,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [currentRestaurant, brandLoading]);
 
   useEffect(() => {
     if (restaurantId) {
@@ -37,20 +41,23 @@ const Dashboard = () => {
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       navigate("/auth");
       return;
     }
 
-    // Get restaurant for this owner
-    const { data: restaurant, error } = await supabase
-      .from("restaurants")
-      .select("id")
-      .eq("owner_id", user.id)
-      .single();
+    // Aguardar BrandContext carregar
+    if (brandLoading) return;
 
-    if (error || !restaurant) {
+    // Usar restaurante do BrandContext
+    if (currentRestaurant) {
+      setRestaurantId(currentRestaurant.id);
+      return;
+    }
+
+    // Se não tem restaurante E é owner, redirecionar para setup
+    if (isOwner()) {
       toast({
         title: "Nenhum restaurante encontrado",
         description: "Você precisa criar um restaurante primeiro.",
@@ -60,7 +67,12 @@ const Dashboard = () => {
       return;
     }
 
-    setRestaurantId(restaurant.id);
+    // Se não é owner e não tem restaurante, algo está errado
+    toast({
+      title: "Erro de configuração",
+      description: "Seu usuário não está vinculado a nenhum restaurante. Entre em contato com o administrador.",
+      variant: "destructive",
+    });
   };
 
   const loadStats = async () => {
