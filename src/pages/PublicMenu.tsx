@@ -42,9 +42,12 @@ interface Restaurant {
   logo_url: string | null;
   phone: string | null;
   address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   delivery_time_estimate: number | null;
   pickup_time_estimate: number | null;
   delivery_fee: number | null;
+  minimum_order: number | null;
   is_open: boolean;
 }
 
@@ -66,6 +69,8 @@ const PublicMenu = () => {
   const [rating, setRating] = useState<number>(0);
   const [totalRatings, setTotalRatings] = useState<number>(0);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [locationPermission, setLocationPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const tabsRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -86,6 +91,65 @@ const PublicMenu = () => {
       });
     }
   }, [restaurant, trackEvent]);
+
+  // Solicitar geolocalização e calcular distância
+  useEffect(() => {
+    if (!restaurant || !restaurant.latitude || !restaurant.longitude) return;
+
+    // Verificar se o navegador suporta geolocalização
+    if (!navigator.geolocation) {
+      setLocationPermission('denied');
+      return;
+    }
+
+    // Solicitar localização do usuário
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationPermission('granted');
+        const { latitude, longitude } = position.coords;
+
+        // Calcular distância usando Haversine formula
+        const dist = calculateDistance(
+          latitude,
+          longitude,
+          restaurant.latitude!,
+          restaurant.longitude!
+        );
+
+        setDistance(dist);
+      },
+      (error) => {
+        console.log('Erro ao obter localização:', error);
+        setLocationPermission('denied');
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 300000 // Cache por 5 minutos
+      }
+    );
+  }, [restaurant]);
+
+  // Função para calcular distância entre duas coordenadas (Haversine formula)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Raio da Terra em km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return parseFloat(distance.toFixed(1));
+  };
+
+  const toRad = (value: number): number => {
+    return (value * Math.PI) / 180;
+  };
 
   // IntersectionObserver para detectar categoria visível (estilo iFood)
   useEffect(() => {
@@ -348,16 +412,35 @@ const PublicMenu = () => {
 
         {/* Delivery Info */}
         <div className="flex items-center justify-between py-3">
-          <div className="flex items-center gap-2 text-sm">
-            {restaurant.delivery_time_estimate && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            {/* Distância (se disponível) */}
+            {distance !== null && (
               <>
-                <span className="text-gray-700">{restaurant.delivery_time_estimate} min</span>
+                <span className="font-medium">{distance} km</span>
                 <span className="text-gray-300">•</span>
               </>
             )}
+
+            {/* Pedido Mínimo (se configurado) */}
+            {restaurant.minimum_order && restaurant.minimum_order > 0 && (
+              <>
+                <span>Min {formatCurrency(restaurant.minimum_order)}</span>
+                <span className="text-gray-300">•</span>
+              </>
+            )}
+
+            {/* Tempo de Entrega */}
+            {restaurant.delivery_time_estimate && (
+              <>
+                <span>{restaurant.delivery_time_estimate} min</span>
+                <span className="text-gray-300">•</span>
+              </>
+            )}
+
+            {/* Taxa de Entrega */}
             {restaurant.delivery_fee !== null && (
               <span className="text-[#00a296] font-medium">
-                {restaurant.delivery_fee === 0 ? "Entrega Grátis" : formatCurrency(restaurant.delivery_fee)}
+                {restaurant.delivery_fee === 0 ? "Grátis" : formatCurrency(restaurant.delivery_fee)}
               </span>
             )}
           </div>

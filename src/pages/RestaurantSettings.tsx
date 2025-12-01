@@ -18,6 +18,8 @@ interface RestaurantSettings {
   description: string | null;
   phone: string | null;
   address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   delivery_time_estimate: number | null;
   pickup_time_estimate: number | null;
   delivery_fee: number | null;
@@ -41,6 +43,8 @@ const RestaurantSettings = () => {
     description: null,
     phone: null,
     address: null,
+    latitude: null,
+    longitude: null,
     delivery_time_estimate: null,
     pickup_time_estimate: null,
     delivery_fee: null,
@@ -69,6 +73,8 @@ const RestaurantSettings = () => {
         description: currentRestaurant.description,
         phone: currentRestaurant.phone,
         address: currentRestaurant.address,
+        latitude: (currentRestaurant as any).latitude,
+        longitude: (currentRestaurant as any).longitude,
         delivery_time_estimate: currentRestaurant.delivery_time_estimate,
         pickup_time_estimate: currentRestaurant.pickup_time_estimate,
         delivery_fee: currentRestaurant.delivery_fee,
@@ -94,6 +100,8 @@ const RestaurantSettings = () => {
           description: settings.description,
           phone: settings.phone,
           address: settings.address,
+          latitude: settings.latitude,
+          longitude: settings.longitude,
           delivery_time_estimate: settings.delivery_time_estimate,
           pickup_time_estimate: settings.pickup_time_estimate,
           delivery_fee: settings.delivery_fee,
@@ -120,6 +128,62 @@ const RestaurantSettings = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleGeocodeAddress = async () => {
+    if (!settings.address) {
+      toast({
+        title: "Endereço necessário",
+        description: "Digite o endereço completo antes de buscar as coordenadas",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Usar Nominatim (OpenStreetMap) - gratuito
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(settings.address)}&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'FoodHub-Pro/1.0'
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0];
+        setSettings(prev => ({
+          ...prev,
+          latitude: parseFloat(lat),
+          longitude: parseFloat(lon)
+        }));
+
+        toast({
+          title: "Coordenadas encontradas!",
+          description: `Latitude: ${lat}, Longitude: ${lon}`,
+        });
+      } else {
+        toast({
+          title: "Endereço não encontrado",
+          description: "Tente um endereço mais completo ou digite as coordenadas manualmente",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao geocodificar:", error);
+      toast({
+        title: "Erro ao buscar coordenadas",
+        description: "Tente novamente ou digite as coordenadas manualmente",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -235,13 +299,59 @@ const RestaurantSettings = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Endereço</Label>
+                <Label htmlFor="address">Endereço Completo</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="address"
+                    value={settings.address || ""}
+                    onChange={(e) => setSettings({ ...settings, address: e.target.value })}
+                    placeholder="Rua, número, bairro, cidade, estado"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleGeocodeAddress}
+                    disabled={loading || !settings.address}
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Clique em "Buscar" para encontrar as coordenadas automaticamente
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude">Latitude</Label>
                 <Input
-                  id="address"
-                  value={settings.address || ""}
-                  onChange={(e) => setSettings({ ...settings, address: e.target.value })}
-                  placeholder="Rua, número, bairro"
+                  id="latitude"
+                  type="number"
+                  step="0.00000001"
+                  value={settings.latitude || ""}
+                  onChange={(e) => setSettings({ ...settings, latitude: e.target.value ? Number(e.target.value) : null })}
+                  placeholder="Ex: -23.5505199"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Necessário para calcular distância até o cliente
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="longitude">Longitude</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="0.00000001"
+                  value={settings.longitude || ""}
+                  onChange={(e) => setSettings({ ...settings, longitude: e.target.value ? Number(e.target.value) : null })}
+                  placeholder="Ex: -46.6333094"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Coordenadas podem ser buscadas automaticamente
+                </p>
               </div>
             </div>
           </CardContent>
