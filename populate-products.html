@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adicionar Produtos de Exemplo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #EA1D2C;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #EA1D2C;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #D61828;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: #2ecc71; }
+        .error { color: #e74c3c; }
+        .info { color: #3498db; }
+        .warning { color: #f39c12; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍔 Adicionar Produtos de Exemplo</h1>
+        <p>Este script irá adicionar produtos de exemplo ao restaurante "Marcelo Lanche's".</p>
+        <p><strong>Produtos que serão criados:</strong></p>
+        <ul>
+            <li>5 Lanches (X-Bacon e X-Tudo como destaques)</li>
+            <li>4 Bebidas (Suco Natural como destaque)</li>
+            <li>3 Porções</li>
+        </ul>
+        <button id="executeBtn" onclick="populateProducts()">Executar Script</button>
+        <div id="log"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const supabaseUrl = 'https://wisikawnpzrrfzqutatl.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpc2lrYXducHpycmZ6cXV0YXRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMzE3MDksImV4cCI6MjA3ODgwNzcwOX0.WHiwj3ALHXe4tFIby8EvCadi9vWFEP_2QmII9Zydm2A';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        window.populateProducts = async function() {
+            const btn = document.getElementById('executeBtn');
+            btn.disabled = true;
+            document.getElementById('log').innerHTML = '';
+
+            log('🚀 Iniciando população de produtos...', 'info');
+
+            try {
+                // 1. Buscar o restaurante
+                log('📍 Buscando restaurante...', 'info');
+                const { data: restaurant, error: restaurantError } = await supabase
+                    .from('restaurants')
+                    .select('id, name, slug')
+                    .or('slug.eq.marcelo-lanches,name.ilike.%Marcelo Lanche%')
+                    .limit(1)
+                    .single();
+
+                if (restaurantError || !restaurant) {
+                    log('❌ Restaurante não encontrado!', 'error');
+                    log(JSON.stringify(restaurantError), 'error');
+                    btn.disabled = false;
+                    return;
+                }
+
+                log(`✅ Restaurante encontrado: ${restaurant.name} (${restaurant.id})`, 'success');
+
+                const restaurantId = restaurant.id;
+
+                // 2. Criar categorias
+                log('📁 Criando categorias...', 'info');
+
+                const categories = [
+                    { name: 'Lanches', description: 'Deliciosos lanches artesanais', display_order: 1 },
+                    { name: 'Bebidas', description: 'Bebidas geladas e refrescantes', display_order: 2 },
+                    { name: 'Porções', description: 'Porções para compartilhar', display_order: 3 }
+                ];
+
+                const categoryIds = {};
+
+                for (const cat of categories) {
+                    const { data: existing } = await supabase
+                        .from('categories')
+                        .select('id')
+                        .eq('restaurant_id', restaurantId)
+                        .eq('name', cat.name)
+                        .single();
+
+                    if (existing) {
+                        log(`  ℹ️  Categoria "${cat.name}" já existe`, 'warning');
+                        categoryIds[cat.name] = existing.id;
+                    } else {
+                        const { data: newCat, error } = await supabase
+                            .from('categories')
+                            .insert({
+                                restaurant_id: restaurantId,
+                                name: cat.name,
+                                description: cat.description,
+                                display_order: cat.display_order,
+                                is_active: true
+                            })
+                            .select()
+                            .single();
+
+                        if (error) {
+                            log(`  ❌ Erro ao criar categoria "${cat.name}": ${error.message}`, 'error');
+                            btn.disabled = false;
+                            return;
+                        }
+
+                        log(`  ✅ Categoria "${cat.name}" criada`, 'success');
+                        categoryIds[cat.name] = newCat.id;
+                    }
+                }
+
+                // 3. Criar produtos de lanches
+                log('🍔 Criando produtos de lanches...', 'info');
+
+                const lanches = [
+                    { name: 'X-Bacon Especial', description: 'Pão, hambúrguer artesanal 180g, queijo, bacon crocante, alface, tomate e molho especial', price: 25.90, is_featured: true },
+                    { name: 'X-Tudo', description: 'Pão, hambúrguer 180g, queijo, presunto, bacon, ovo, alface, tomate, milho e batata palha', price: 32.90, is_featured: true },
+                    { name: 'X-Salada', description: 'Pão, hambúrguer 150g, queijo, alface, tomate e molho especial', price: 18.90, is_featured: false },
+                    { name: 'X-Burguer', description: 'Pão, hambúrguer 150g, queijo e molho especial', price: 15.90, is_featured: false },
+                    { name: 'X-Frango', description: 'Pão, peito de frango grelhado, queijo, alface, tomate e maionese', price: 19.90, is_featured: false }
+                ];
+
+                for (const product of lanches) {
+                    const { data: existing } = await supabase
+                        .from('products')
+                        .select('id')
+                        .eq('restaurant_id', restaurantId)
+                        .eq('name', product.name)
+                        .single();
+
+                    if (existing) {
+                        log(`  ℹ️  Produto "${product.name}" já existe`, 'warning');
+                    } else {
+                        const { error } = await supabase
+                            .from('products')
+                            .insert({
+                                restaurant_id: restaurantId,
+                                category_id: categoryIds['Lanches'],
+                                name: product.name,
+                                description: product.description,
+                                base_price: product.price,
+                                price: product.price,
+                                is_active: true,
+                                is_featured: product.is_featured
+                            });
+
+                        if (error) {
+                            log(`  ❌ Erro ao criar produto "${product.name}": ${error.message}`, 'error');
+                        } else {
+                            log(`  ✅ Produto "${product.name}" criado ${product.is_featured ? '⭐ (destaque)' : ''}`, 'success');
+                        }
+                    }
+                }
+
+                // 4. Criar produtos de bebidas
+                log('🥤 Criando produtos de bebidas...', 'info');
+
+                const bebidas = [
+                    { name: 'Coca-Cola 2L', description: 'Refrigerante Coca-Cola 2 litros gelada', price: 10.00, is_featured: false },
+                    { name: 'Guaraná Antarctica 2L', description: 'Refrigerante Guaraná 2 litros gelado', price: 9.00, is_featured: false },
+                    { name: 'Suco Natural Laranja', description: 'Suco de laranja natural 500ml', price: 8.00, is_featured: true },
+                    { name: 'Água Mineral', description: 'Água mineral sem gás 500ml', price: 3.00, is_featured: false }
+                ];
+
+                for (const product of bebidas) {
+                    const { data: existing } = await supabase
+                        .from('products')
+                        .select('id')
+                        .eq('restaurant_id', restaurantId)
+                        .eq('name', product.name)
+                        .single();
+
+                    if (existing) {
+                        log(`  ℹ️  Produto "${product.name}" já existe`, 'warning');
+                    } else {
+                        const { error } = await supabase
+                            .from('products')
+                            .insert({
+                                restaurant_id: restaurantId,
+                                category_id: categoryIds['Bebidas'],
+                                name: product.name,
+                                description: product.description,
+                                base_price: product.price,
+                                price: product.price,
+                                is_active: true,
+                                is_featured: product.is_featured
+                            });
+
+                        if (error) {
+                            log(`  ❌ Erro ao criar produto "${product.name}": ${error.message}`, 'error');
+                        } else {
+                            log(`  ✅ Produto "${product.name}" criado ${product.is_featured ? '⭐ (destaque)' : ''}`, 'success');
+                        }
+                    }
+                }
+
+                // 5. Criar produtos de porções
+                log('🍟 Criando produtos de porções...', 'info');
+
+                const porcoes = [
+                    { name: 'Batata Frita Grande', description: 'Porção grande de batata frita crocante', price: 22.00, is_featured: false },
+                    { name: 'Onion Rings', description: 'Anéis de cebola empanados e fritos - 15 unidades', price: 18.00, is_featured: false },
+                    { name: 'Nuggets de Frango', description: 'Nuggets de frango crocantes - 12 unidades', price: 20.00, is_featured: false }
+                ];
+
+                for (const product of porcoes) {
+                    const { data: existing } = await supabase
+                        .from('products')
+                        .select('id')
+                        .eq('restaurant_id', restaurantId)
+                        .eq('name', product.name)
+                        .single();
+
+                    if (existing) {
+                        log(`  ℹ️  Produto "${product.name}" já existe`, 'warning');
+                    } else {
+                        const { error } = await supabase
+                            .from('products')
+                            .insert({
+                                restaurant_id: restaurantId,
+                                category_id: categoryIds['Porções'],
+                                name: product.name,
+                                description: product.description,
+                                base_price: product.price,
+                                price: product.price,
+                                is_active: true,
+                                is_featured: product.is_featured
+                            });
+
+                        if (error) {
+                            log(`  ❌ Erro ao criar produto "${product.name}": ${error.message}`, 'error');
+                        } else {
+                            log(`  ✅ Produto "${product.name}" criado`, 'success');
+                        }
+                    }
+                }
+
+                log('', 'info');
+                log('✨ Processo concluído com sucesso!', 'success');
+                log('📊 Resumo:', 'info');
+                log('  - 3 categorias criadas/verificadas', 'info');
+                log('  - 12 produtos criados/verificados', 'info');
+                log('  - 3 produtos marcados como destaque (⭐)', 'info');
+                log('', 'info');
+                log(`🌐 Acesse o cardápio em: http://localhost:8080/menu/${restaurant.slug}`, 'success');
+
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
