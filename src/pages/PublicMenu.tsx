@@ -12,6 +12,12 @@ import { ProductModal } from "@/components/ProductModal";
 import { CartDrawer } from "@/components/CartDrawer";
 import { FacebookPixel } from "@/components/FacebookPixel";
 import { useTracking } from "@/hooks/useTracking";
+import ReviewSubmission from "@/components/ReviewSubmission";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Product {
   id: string;
@@ -66,6 +72,7 @@ const PublicMenu = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [rating, setRating] = useState<number>(0);
   const [totalRatings, setTotalRatings] = useState<number>(0);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -397,9 +404,9 @@ const PublicMenu = () => {
           )}
         </div>
 
-        {/* Rating */}
-        {totalRatings > 0 && (
-          <div className="mt-4 flex items-center justify-between py-3 border-b border-gray-50">
+        {/* Rating e Botão de Avaliação */}
+        <div className="mt-4 flex items-center justify-between py-3 border-b border-gray-50">
+          {totalRatings > 0 ? (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 <Star size={14} className="fill-yellow-400 text-yellow-400" />
@@ -407,8 +414,19 @@ const PublicMenu = () => {
               </div>
               <span className="text-xs text-gray-500">({totalRatings} {totalRatings === 1 ? 'avaliação' : 'avaliações'})</span>
             </div>
-          </div>
-        )}
+          ) : (
+            <span className="text-xs text-gray-500">Seja o primeiro a avaliar</span>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsReviewDialogOpen(true)}
+            className="text-primary hover:text-primary hover:bg-primary/10 h-8 px-3 text-xs font-medium"
+          >
+            <Star size={14} className="mr-1" />
+            Deixar avaliação
+          </Button>
+        </div>
 
         {/* Delivery Info */}
         <div className="flex items-center justify-between py-3">
@@ -655,6 +673,24 @@ const PublicMenu = () => {
         onOpenChange={setIsCartDrawerOpen}
         restaurantSlug={slug || ""}
       />
+
+      {/* Review Dialog */}
+      <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Avaliar Restaurante</DialogTitle>
+          {restaurant && (
+            <ReviewSubmission
+              restaurantId={restaurant.id}
+              restaurantName={restaurant.name}
+              onSuccess={() => {
+                setIsReviewDialogOpen(false);
+                loadData(); // Reload to update rating stats
+              }}
+              onCancel={() => setIsReviewDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Facebook Pixel Integration */}
       {restaurant && <FacebookPixel restaurantId={restaurant.id} />}
