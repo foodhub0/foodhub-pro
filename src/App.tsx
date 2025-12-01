@@ -38,6 +38,7 @@ import WaiterOrders from "./pages/WaiterOrders";
 import Reception from "./pages/Reception";
 import AddonGroups from "./pages/AddonGroups";
 import RestaurantSettings from "./pages/RestaurantSettings";
+import Reviews from "./pages/Reviews";
 
 const queryClient = new QueryClient();
 
@@ -124,6 +125,14 @@ const App = () => (
                     element={
                       <RoleGuard roles={['owner']}>
                         <RestaurantSettings />
+                      </RoleGuard>
+                    }
+                  />
+                  <Route
+                    path="/reviews"
+                    element={
+                      <RoleGuard roles={['owner']}>
+                        <Reviews />
                       </RoleGuard>
                     }
                   />
