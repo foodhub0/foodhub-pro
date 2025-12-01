@@ -95,6 +95,11 @@ const Layout = ({ children }: LayoutProps) => {
       items.push({ icon: Store, label: "Meu Restaurante", path: "/restaurant" });
     }
 
+    // Configurações do Restaurante (apenas Owner)
+    if (isOwner()) {
+      items.push({ icon: Settings, label: "Configurações", path: "/restaurant-settings" });
+    }
+
     // Produtos (Manager, Owner)
     if (can('read', 'products')) {
       items.push({ icon: Utensils, label: "Produtos", path: "/products" });
