@@ -26,6 +26,7 @@ import {
   ClipboardList,
   DoorOpen,
   Layers,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -93,6 +94,12 @@ const Layout = ({ children }: LayoutProps) => {
     // Meu Restaurante (Manager, Owner)
     if (can('read', 'settings')) {
       items.push({ icon: Store, label: "Meu Restaurante", path: "/restaurant" });
+    }
+
+    // Configurações do Restaurante (apenas Owner)
+    if (isOwner()) {
+      items.push({ icon: Settings, label: "Configurações", path: "/restaurant-settings" });
+      items.push({ icon: Star, label: "Avaliações", path: "/reviews" });
     }
 
     // Produtos (Manager, Owner)

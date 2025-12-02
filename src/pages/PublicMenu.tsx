@@ -12,6 +12,12 @@ import { ProductModal } from "@/components/ProductModal";
 import { CartDrawer } from "@/components/CartDrawer";
 import { FacebookPixel } from "@/components/FacebookPixel";
 import { useTracking } from "@/hooks/useTracking";
+import ReviewSubmission from "@/components/ReviewSubmission";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Product {
   id: string;
@@ -42,9 +48,12 @@ interface Restaurant {
   logo_url: string | null;
   phone: string | null;
   address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   delivery_time_estimate: number | null;
   pickup_time_estimate: number | null;
   delivery_fee: number | null;
+  minimum_order: number | null;
   is_open: boolean;
 }
 
@@ -52,7 +61,7 @@ const PublicMenu = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getItemCount } = useCart();
+  const { getItemCount, getTotal } = useCart();
   const { trackEvent } = useTracking();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -63,9 +72,12 @@ const PublicMenu = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [rating, setRating] = useState<number>(0);
   const [totalRatings, setTotalRatings] = useState<number>(0);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [locationPermission, setLocationPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const tabsRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -87,6 +99,65 @@ const PublicMenu = () => {
     }
   }, [restaurant, trackEvent]);
 
+  // Solicitar geolocalização e calcular distância
+  useEffect(() => {
+    if (!restaurant || !restaurant.latitude || !restaurant.longitude) return;
+
+    // Verificar se o navegador suporta geolocalização
+    if (!navigator.geolocation) {
+      setLocationPermission('denied');
+      return;
+    }
+
+    // Solicitar localização do usuário
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationPermission('granted');
+        const { latitude, longitude } = position.coords;
+
+        // Calcular distância usando Haversine formula
+        const dist = calculateDistance(
+          latitude,
+          longitude,
+          restaurant.latitude!,
+          restaurant.longitude!
+        );
+
+        setDistance(dist);
+      },
+      (error) => {
+        console.log('Erro ao obter localização:', error);
+        setLocationPermission('denied');
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 300000 // Cache por 5 minutos
+      }
+    );
+  }, [restaurant]);
+
+  // Função para calcular distância entre duas coordenadas (Haversine formula)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Raio da Terra em km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return parseFloat(distance.toFixed(1));
+  };
+
+  const toRad = (value: number): number => {
+    return (value * Math.PI) / 180;
+  };
+
   // IntersectionObserver para detectar categoria visível (estilo iFood)
   useEffect(() => {
     // Não aplicar durante busca ou quando usuário está clicando
@@ -100,7 +171,7 @@ const PublicMenu = () => {
     // Configurar IntersectionObserver - detecta exatamente quando o título cruza o header
     const observerOptions = {
       root: null, // viewport
-      rootMargin: '-170px 0px -70% 0px', // Linha logo abaixo do header fixo
+      rootMargin: '-128px 0px -70% 0px', // Linha logo abaixo do header fixo (search + tabs)
       threshold: 0, // Detecção instantânea ao cruzar
     };
 
@@ -177,7 +248,19 @@ const PublicMenu = () => {
       .eq("is_active", true)
       .order("name");
 
-    setProducts(productsData || []);
+    const loadedProducts = productsData || [];
+    setProducts(loadedProducts);
+
+    // Adicionar categoria "Destaques" se houver produtos featured
+    const hasFeatured = loadedProducts.some(p => p.is_featured);
+    if (hasFeatured) {
+      setCategories([
+        { id: 'destaques', name: 'Destaques', description: null, image_url: null, display_order: 0 },
+        ...(categoriesData || [])
+      ]);
+    } else {
+      setCategories(categoriesData || []);
+    }
 
     // Carregar avaliações reais
     const { data: ratingsData } = await supabase
@@ -236,31 +319,17 @@ const PublicMenu = () => {
     }).format(value);
   };
 
-  const handleCategoryClick = (categoryId: string | null) => {
+  const handleCategoryClick = (categoryId: string) => {
     // Marcar que estamos scrollando programaticamente
     isScrollingRef.current = true;
 
-    // Se clicou em "Todos", limpa filtro e volta ao topo
-    if (categoryId === null) {
-      setSelectedCategory(null);
-      setActiveCategory(null);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      // Reativar observer após scroll
-      setTimeout(() => {
-        isScrollingRef.current = false;
-      }, 1000);
-      return;
-    }
-
-    // Se estava filtrando, limpa o filtro
-    setSelectedCategory(null);
+    // Atualizar categoria ativa
     setActiveCategory(categoryId);
 
     // Scroll suave até a seção
-    const element = categoryRefs.current[categoryId];
+    const element = document.getElementById(`cat-${categoryId}`) || categoryRefs.current[categoryId];
     if (element) {
-      const headerOffset = 200; // Altura do header sticky + tabs
+      const headerOffset = 128; // Altura do header sticky (search + tabs)
       const elementPosition = element.getBoundingClientRect().top + window.pageYOffset - headerOffset;
 
       window.scrollTo({
@@ -271,7 +340,9 @@ const PublicMenu = () => {
       // Reativar observer após o scroll completar
       setTimeout(() => {
         isScrollingRef.current = false;
-      }, 1000);
+      }, 800);
+    } else {
+      isScrollingRef.current = false;
     }
   };
 
@@ -292,167 +363,164 @@ const PublicMenu = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header com Banner */}
-      <div className="relative h-64 bg-gradient-to-b from-gray-900 to-gray-800 dark:from-gray-950 dark:to-gray-900">
-        {restaurant.cover_url && (
+    <div className="min-h-screen bg-white">
+      {/* Banner */}
+      <div className="relative h-44 w-full">
+        {restaurant.cover_url ? (
           <img
             src={restaurant.cover_url}
             alt={restaurant.name}
-            className="w-full h-full object-cover opacity-60"
+            className="w-full h-full object-cover"
           />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary to-primary/80" />
         )}
+      </div>
 
-        {/* Logo Circular Sobreposto */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+      {/* Card de Informações */}
+      <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-5 pb-2 border-b border-gray-100">
+        {/* Logo Circular */}
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full p-1 bg-white shadow-md">
           {restaurant.logo_url ? (
             <img
               src={restaurant.logo_url}
               alt={restaurant.name}
-              className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover bg-white"
+              className="w-full h-full rounded-full object-cover"
             />
           ) : (
-            <div className="w-32 h-32 rounded-full border-4 border-white shadow-xl bg-red-600 flex items-center justify-center">
-              <span className="text-white text-3xl font-bold">
+            <div className="w-full h-full rounded-full bg-primary flex items-center justify-center">
+              <span className="text-white text-2xl font-bold">
                 {restaurant.name.charAt(0)}
               </span>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Card de Informações Flutuante */}
-      <div className="relative -mt-20 px-4 pb-4">
-        <div className="bg-card rounded-3xl shadow-lg p-6 max-w-2xl mx-auto">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-foreground mb-2">
-                {restaurant.name}
-              </h1>
+        <div className="pt-12 text-center">
+          <h1 className="text-xl font-bold text-gray-800">{restaurant.name}</h1>
 
-              {/* Rating */}
-              {totalRatings > 0 && (
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-semibold text-foreground">{rating.toFixed(1)}</span>
-                    <span className="text-sm text-muted-foreground">
-                      ({totalRatings} {totalRatings === 1 ? 'avaliação' : 'avaliações'})
-                    </span>
-                  </div>
-                </div>
-              )}
+          {restaurant.description && (
+            <p className="text-xs text-gray-500 mt-1">{restaurant.description}</p>
+          )}
+        </div>
 
-              {/* Info - Prazos minimalistas */}
-              <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
-                {restaurant.delivery_time_estimate && (
-                  <div className="flex items-center gap-1.5">
-                    <Bike className="h-4 w-4" />
-                    <span>{restaurant.delivery_time_estimate} min</span>
-                  </div>
-                )}
-                {restaurant.pickup_time_estimate && (
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4" />
-                    <span>{restaurant.pickup_time_estimate} min</span>
-                  </div>
-                )}
-                {restaurant.delivery_fee !== null && (
-                  <div className="flex items-center gap-1.5">
-                    <DollarSign className="h-4 w-4" />
-                    <span>{restaurant.delivery_fee === 0 ? "Grátis" : formatCurrency(restaurant.delivery_fee)}</span>
-                  </div>
-                )}
+        {/* Rating e Botão de Avaliação */}
+        <div className="mt-4 flex items-center justify-between py-3 border-b border-gray-50">
+          {totalRatings > 0 ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                <span className="font-bold text-sm text-yellow-400">{rating.toFixed(1)}</span>
               </div>
+              <span className="text-xs text-gray-500">({totalRatings} {totalRatings === 1 ? 'avaliação' : 'avaliações'})</span>
             </div>
+          ) : (
+            <span className="text-xs text-gray-500">Seja o primeiro a avaliar</span>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsReviewDialogOpen(true)}
+            className="text-primary hover:text-primary hover:bg-primary/10 h-8 px-3 text-xs font-medium"
+          >
+            <Star size={14} className="mr-1" />
+            Deixar avaliação
+          </Button>
+        </div>
+
+        {/* Delivery Info */}
+        <div className="flex items-center justify-between py-3">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            {/* Distância (se disponível) */}
+            {distance !== null && (
+              <>
+                <span className="font-medium">{distance} km</span>
+                <span className="text-gray-300">•</span>
+              </>
+            )}
+
+            {/* Pedido Mínimo (se configurado) */}
+            {restaurant.minimum_order && restaurant.minimum_order > 0 && (
+              <>
+                <span>Min {formatCurrency(restaurant.minimum_order)}</span>
+                <span className="text-gray-300">•</span>
+              </>
+            )}
+
+            {/* Tempo de Entrega */}
+            {restaurant.delivery_time_estimate && (
+              <>
+                <span>{restaurant.delivery_time_estimate} min</span>
+                <span className="text-gray-300">•</span>
+              </>
+            )}
+
+            {/* Taxa de Entrega */}
+            {restaurant.delivery_fee !== null && (
+              <span className="text-[#00a296] font-medium">
+                {restaurant.delivery_fee === 0 ? "Grátis" : formatCurrency(restaurant.delivery_fee)}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* Banner de Loja Fechada */}
       {!restaurant.is_open && (
-        <div className="px-4 py-3 bg-slate-100 dark:bg-slate-800 border-y border-slate-200 dark:border-slate-700">
-          <div className="max-w-2xl mx-auto flex items-center gap-3">
-            <Store className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-            <div>
-              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Loja fechada</p>
-              <p className="text-xs text-slate-600 dark:text-slate-400">Não estamos aceitando pedidos no momento</p>
-            </div>
+        <div className="px-4 py-2 bg-yellow-50 border-y border-yellow-200">
+          <div className="flex items-center gap-2">
+            <Store className="h-4 w-4 text-yellow-600" />
+            <span className="text-sm text-yellow-800 font-medium">Loja fechada no momento</span>
           </div>
         </div>
       )}
 
-      {/* Barra de Busca e Navegação Fixa */}
-      <div className="sticky top-0 z-40 bg-card border-b shadow-sm">
-        <div className="px-4 py-3">
-          <div className="flex items-center gap-3 max-w-2xl mx-auto">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-              className="flex-shrink-0"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+      {/* Barra de Busca Fixa */}
+      <div className="sticky top-0 z-40 bg-white shadow-sm">
+        <div className="flex items-center px-4 py-3 gap-3">
+          <button
+            onClick={() => navigate("/")}
+            className="text-primary"
+          >
+            <ArrowLeft size={24} />
+          </button>
 
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder={`Buscar em ${restaurant.name}`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-muted border-0 rounded-full"
-              />
-            </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="flex-shrink-0"
-            >
-              <MenuIcon className="h-5 w-5" />
-            </Button>
+          <div className="flex-1 bg-gray-100 rounded-lg h-10 flex items-center px-3 gap-2">
+            <Search className="text-primary" size={18} />
+            <input
+              type="text"
+              placeholder={`Buscar em ${restaurant.name}`}
+              className="bg-transparent w-full text-sm text-gray-700 placeholder:text-gray-500 outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
+
+          <button className="text-gray-600">
+            <MenuIcon size={24} />
+          </button>
         </div>
 
-        {/* Tabs de Categorias - Sticky com Scroll Sincronizado */}
-        <div className="overflow-x-auto scrollbar-hide border-t bg-card" ref={tabsRef}>
-          <div className="flex gap-1 px-4 min-w-max">
-            <Button
-              variant="ghost"
-              data-category="all"
-              className={cn(
-                "rounded-none border-b-2 px-4 py-3 font-medium transition-all duration-200 whitespace-nowrap",
-                !selectedCategory && !activeCategory
-                  ? "border-primary text-primary bg-primary/10"
-                  : "border-transparent text-muted-foreground hover:text-primary hover:bg-primary/5"
-              )}
-              onClick={() => handleCategoryClick(null)}
-            >
-              Todos
-            </Button>
+        {/* Tabs de Categorias */}
+        <div className="overflow-x-auto scrollbar-hide border-t border-gray-100" ref={tabsRef}>
+          <div className="flex gap-6 px-4 min-w-max">
             {categories.map((category) => {
-              // Ativo se está selecionado (filtro) OU é a categoria atual do scroll
-              const isActive = selectedCategory
-                ? selectedCategory === category.id
-                : activeCategory === category.id;
+              const isActive = activeCategory === category.id;
 
               return (
-                <Button
+                <button
                   key={category.id}
-                  variant="ghost"
                   data-category={category.id}
                   className={cn(
-                    "rounded-none border-b-2 px-4 py-3 font-medium transition-all duration-200 whitespace-nowrap",
+                    "whitespace-nowrap text-sm font-medium py-3 border-b-2 transition-all",
                     isActive
-                      ? "border-primary text-primary bg-primary/10 font-semibold"
-                      : "border-transparent text-muted-foreground hover:text-primary hover:bg-primary/5"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-gray-500"
                   )}
                   onClick={() => handleCategoryClick(category.id)}
                 >
                   {category.name}
-                </Button>
+                </button>
               );
             })}
           </div>
@@ -460,175 +528,41 @@ const PublicMenu = () => {
       </div>
 
       {/* Conteúdo Principal */}
-      <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
-        {/* Seção Destaques - Scroll Horizontal Estilo iFood */}
-        {featuredProducts.length > 0 && !searchQuery && !selectedCategory && (
-          <div className="mb-8 -mx-4">
-            <h2 className="text-xl font-bold text-foreground mb-4 px-4">DESTAQUES</h2>
-            <div className="overflow-x-auto scrollbar-hide px-4">
-              <div className="flex gap-4 pb-2">
-                {featuredProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    onClick={() => handleProductClick(product)}
-                    className="cursor-pointer group flex-shrink-0 w-44"
-                  >
-                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-3 bg-gray-200 shadow-md">
-                      {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/10">
-                          <span className="text-5xl opacity-40">🍕</span>
-                        </div>
-                      )}
-                      {/* Badge de Destaque */}
-                      <div className="absolute top-2 left-2">
-                        <Badge className="bg-yellow-500 text-yellow-950 border-0 shadow-sm">
-                          ⭐ Destaque
-                        </Badge>
-                      </div>
-                    </div>
-                    <h3 className="font-semibold text-foreground mb-1 text-sm line-clamp-2 min-h-[2.5rem]">
-                      {product.name}
-                    </h3>
-                    <p className="font-bold text-primary text-base">
-                      {formatCurrency(product.price || product.base_price)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Lista de Produtos por Categoria */}
-        {categories.map((category) => {
-          const categoryProducts = filteredProducts.filter(
-            p => p.category_id === category.id
-          );
-
-          if (categoryProducts.length === 0) return null;
-          if (selectedCategory && selectedCategory !== category.id) return null;
-
-          return (
-            <div
-              key={category.id}
-              data-category-id={category.id}
-              className="mb-8 scroll-mt-44"
-              ref={(el) => { categoryRefs.current[category.id] = el; }}
-            >
-              <h2 className="text-lg font-bold text-foreground mb-4 uppercase">
-                {category.name}
-              </h2>
-              <div className="space-y-3">
-                {categoryProducts.map((product, index) => (
-                  <div
-                    key={product.id}
-                    onClick={() => handleProductClick(product)}
-                    className="group flex items-start gap-4 bg-card p-3 rounded-xl border border-border hover:shadow-md hover:border-primary/20 transition-all duration-200 cursor-pointer"
-                  >
-                    <div className="flex-1 min-w-0">
-                      {index === 0 && (
-                        <Badge variant="outline" className="mb-2 text-xs font-medium border-primary/30 text-primary">
-                          🔥 Mais pedido
-                        </Badge>
-                      )}
-                      <h3 className="font-semibold text-foreground mb-1.5 line-clamp-1 group-hover:text-primary transition-colors">
-                        {product.name}
-                      </h3>
-                      {product.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
-                          {product.description}
-                        </p>
-                      )}
-                      <p className="font-bold text-foreground text-base">
-                        {formatCurrency(product.price || product.base_price)}
-                      </p>
-                    </div>
-
-                    <div className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-sm">
-                      {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800">
-                          <span className="text-3xl opacity-40">🍽️</span>
-                        </div>
-                      )}
-                      <Button
-                        size="icon"
-                        className="absolute bottom-2 right-2 h-8 w-8 rounded-full shadow-lg bg-white hover:bg-white/90 text-primary hover:text-primary border-2 border-white group-hover:scale-110 transition-transform"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleProductClick(product);
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Produtos sem categoria */}
-        {filteredProducts.filter(p => !p.category_id).length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-bold text-foreground mb-4 uppercase">
-              Outros Produtos
-            </h2>
-            <div className="space-y-3">
-              {filteredProducts.filter(p => !p.category_id).map((product) => (
+      <div className="pb-24">
+        {/* Seção Destaques - Scroll Horizontal */}
+        {featuredProducts.length > 0 && !searchQuery && (
+          <div className="pt-6 pb-4 pl-4 bg-white mb-2" id="cat-destaques" data-category-id="destaques">
+            <h3 className="font-bold text-lg text-gray-800 mb-4">Destaques</h3>
+            <div className="flex overflow-x-auto gap-4 pr-4 scrollbar-hide pb-2">
+              {featuredProducts.map((product) => (
                 <div
                   key={product.id}
                   onClick={() => handleProductClick(product)}
-                  className="group flex items-start gap-4 bg-card p-3 rounded-xl border border-border hover:shadow-md hover:border-primary/20 transition-all duration-200 cursor-pointer"
+                  className="min-w-[280px] max-w-[280px] bg-white rounded-lg shadow-sm overflow-hidden cursor-pointer border border-gray-100 hover:shadow-md transition-shadow"
                 >
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground mb-1.5 line-clamp-1 group-hover:text-primary transition-colors">
-                      {product.name}
-                    </h3>
-                    {product.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
-                        {product.description}
-                      </p>
-                    )}
-                    <p className="font-bold text-foreground text-base">
-                      {formatCurrency(product.price || product.base_price)}
-                    </p>
-                  </div>
-
-                  <div className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-sm">
+                  <div className="h-32 w-full relative">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800">
-                        <span className="text-3xl opacity-40">🍕</span>
+                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                        <span className="text-4xl opacity-40">🍕</span>
                       </div>
                     )}
-                    <Button
-                      size="icon"
-                      className="absolute bottom-2 right-2 h-8 w-8 rounded-full shadow-lg bg-white hover:bg-white/90 text-primary hover:text-primary border-2 border-white group-hover:scale-110 transition-transform"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleProductClick(product);
-                      }}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                    <div className="absolute top-2 left-2 bg-gray-800/80 text-white text-[10px] px-2 py-1 rounded font-medium backdrop-blur-sm">
+                      Mais pedido
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    <h4 className="text-sm font-medium text-gray-800 line-clamp-1">{product.name}</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-primary font-medium text-sm">
+                        {formatCurrency(product.price || product.base_price)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -636,23 +570,92 @@ const PublicMenu = () => {
           </div>
         )}
 
+        {/* Lista de Produtos por Categoria */}
+        <div className="bg-white px-4">
+          {categories.map((category) => {
+            const categoryProducts = filteredProducts.filter(
+              p => p.category_id === category.id
+            );
+
+            if (categoryProducts.length === 0) return null;
+
+            return (
+              <div
+                key={category.id}
+                id={`cat-${category.id}`}
+                data-category-id={category.id}
+                className="py-4 scroll-mt-32"
+                ref={(el) => { categoryRefs.current[category.id] = el; }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-lg text-gray-800">{category.name}</h3>
+                </div>
+                <div className="flex flex-col gap-6">
+                  {categoryProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      onClick={() => handleProductClick(product)}
+                      className="flex justify-between cursor-pointer group"
+                    >
+                      <div className="flex-1 pr-3 flex flex-col justify-center">
+                        <h3 className="text-gray-800 text-[15px] font-medium leading-tight mb-1">
+                          {product.name}
+                        </h3>
+                        {product.description && (
+                          <p className="text-gray-600 text-xs leading-relaxed font-light line-clamp-2">
+                            {product.description}
+                          </p>
+                        )}
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className="text-gray-800 text-sm font-medium">
+                            {formatCurrency(product.price || product.base_price)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-24 h-24 shrink-0 rounded-lg overflow-hidden relative bg-gray-100">
+                        {product.image_url ? (
+                          <img
+                            src={product.image_url}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                            <span className="text-2xl opacity-40">🍽️</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-b border-gray-100 mt-6"></div>
+              </div>
+            );
+          })}
+        </div>
+
         {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Nenhum produto encontrado</p>
+          <div className="text-center py-12 px-4">
+            <p className="text-gray-500">Nenhum produto encontrado</p>
           </div>
         )}
       </div>
 
       {/* Botão Carrinho Flutuante */}
-      {getItemCount() > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
+      {getItemCount() > 0 && !isCartDrawerOpen && (
+        <div className="fixed bottom-4 left-0 w-full px-4 z-30 max-w-md mx-auto right-0">
+          <button
             onClick={() => setIsCartDrawerOpen(true)}
-            className="h-14 px-6 rounded-full shadow-2xl bg-primary hover:bg-primary/90 flex items-center gap-3"
+            className="w-full bg-primary text-white rounded-lg p-3 flex justify-between items-center shadow-lg active:scale-[0.98] transition-transform"
           >
-            <ShoppingCart className="h-5 w-5" />
-            <span className="font-semibold">Ver carrinho ({getItemCount()})</span>
-          </Button>
+            <div className="flex items-center gap-2">
+              <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-bold">
+                {getItemCount()}
+              </span>
+              <span className="text-sm font-medium">Ver sacola</span>
+            </div>
+            <span className="text-sm font-bold">{formatCurrency(getTotal())}</span>
+          </button>
         </div>
       )}
 
@@ -670,6 +673,24 @@ const PublicMenu = () => {
         onOpenChange={setIsCartDrawerOpen}
         restaurantSlug={slug || ""}
       />
+
+      {/* Review Dialog */}
+      <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Avaliar Restaurante</DialogTitle>
+          {restaurant && (
+            <ReviewSubmission
+              restaurantId={restaurant.id}
+              restaurantName={restaurant.name}
+              onSuccess={() => {
+                setIsReviewDialogOpen(false);
+                loadData(); // Reload to update rating stats
+              }}
+              onCancel={() => setIsReviewDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Facebook Pixel Integration */}
       {restaurant && <FacebookPixel restaurantId={restaurant.id} />}
